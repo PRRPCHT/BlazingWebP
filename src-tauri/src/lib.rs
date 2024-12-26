@@ -1,7 +1,7 @@
 use fast_image_resize::{images::Image as FirImage, PixelType, Resizer};
 use image::{DynamicImage, GenericImageView, ImageBuffer, ImageReader, Rgba};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-use std::path::Path;
+use std::{path::Path, thread};
 use tauri::{Emitter, Manager, Size};
 use webp::Encoder;
 
@@ -216,27 +216,29 @@ fn get_file_size(path: &std::path::PathBuf) -> u64 {
 
 #[tauri::command]
 fn process(app: tauri::AppHandle, images: Vec<Image>, parameters: Parameters) {
-    images.par_iter().for_each(|image| {
-        match process_image(image, &parameters) {
-            Ok(file_size) => app
-                .emit(
-                    "success",
-                    Success {
-                        full_path: image.full_path.clone(),
-                        size: file_size,
-                    },
-                )
-                .unwrap(),
-            Err(error) => app
-                .emit(
-                    "error",
-                    ProcessError {
-                        full_path: image.full_path.clone(),
-                        error: error.to_string(),
-                    },
-                )
-                .unwrap(),
-        };
+    thread::spawn(move || {
+        images.par_iter().for_each(|image| {
+            match process_image(image, &parameters) {
+                Ok(file_size) => app
+                    .emit(
+                        "success",
+                        Success {
+                            full_path: image.full_path.clone(),
+                            size: file_size,
+                        },
+                    )
+                    .unwrap(),
+                Err(error) => app
+                    .emit(
+                        "error",
+                        ProcessError {
+                            full_path: image.full_path.clone(),
+                            error: error.to_string(),
+                        },
+                    )
+                    .unwrap(),
+            };
+        });
     });
 }
 

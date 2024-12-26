@@ -20,6 +20,8 @@
 	let saveTo = $state('same-folder');
 	let saveFolder = $state('');
 	let images = $state<Image[]>([]);
+	let done = $state(0);
+	let inProgress = $state(false);
 
 	async function extractFileDetails(filePath: string) {
 		let filepath = '';
@@ -57,6 +59,8 @@
 			isEnlargingAllowed: isAllowEnlarging,
 			saveFolder: saveFolder
 		};
+		done = 0;
+		inProgress = true;
 		await invoke('process', { images, parameters });
 	}
 
@@ -122,14 +126,23 @@
 		});
 	}
 
+	function checkProgress() {
+		done++;
+		if (done == images.length) {
+			inProgress = false;
+		}
+	}
+
 	listen<Success>('success', (event) => {
 		console.log(`Succes for ${event.payload.fullPath} with size ${event.payload.size}`);
 		updateListSuccess(event.payload);
+		checkProgress();
 	});
 
 	listen<ProcessError>('error', (event) => {
 		console.log(`Succes for ${event.payload.fullPath} with size ${event.payload.error}`);
 		updateListError(event.payload);
+		checkProgress();
 	});
 </script>
 
@@ -164,8 +177,14 @@
 		</div>
 
 		<div class="flex justify-between py-2">
-			<button class="btn btn-primary btn-sm mx-2" onclick={addFiles}>Add images</button>
-			<button class="btn btn-neutral btn-sm" onclick={clear}>Clear</button>
+			{#if !inProgress}
+				<button class="btn btn-primary btn-sm mx-2" onclick={addFiles}>Add images</button>
+				<button class="btn btn-neutral btn-sm" onclick={clear}>Clear</button>
+			{/if}
+			{#if inProgress}
+				<progress class="progress w-full mx-2 h-8" value={done} max={images.length}></progress>
+				<!-- <progress class="progress progress-primary w-full mx-2 h-8" value="37" max="172"></progress> -->
+			{/if}
 		</div>
 	</section>
 	<section class="min-w-72 w-72 h-screen flex flex-col">
@@ -337,7 +356,12 @@
 			</div>
 		</div>
 		<div class="px-2 py-2 w-auto">
-			<button class="btn btn-primary btn-sm w-full" onclick={processImages}>Start</button>
+			{#if inProgress}
+				<button class="btn btn-error btn-sm w-full" onclick={processImages}>Cancel</button>
+			{/if}
+			{#if !inProgress}
+				<button class="btn btn-primary btn-sm w-full" onclick={processImages}>Start</button>
+			{/if}
 		</div>
 	</section>
 </main>

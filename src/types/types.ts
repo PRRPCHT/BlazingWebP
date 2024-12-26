@@ -1,6 +1,6 @@
 export enum Status {
-    TODO = "TODO",
-    SUCCESS = "SUCCESS",
+    TODO = "TO DO",
+    SUCCESS = "DONE",
     ERROR = "ERROR",
 }
 

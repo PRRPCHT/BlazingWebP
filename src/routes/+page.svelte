@@ -11,6 +11,7 @@
 	import { open } from '@tauri-apps/plugin-dialog';
 	import { basename, extname, dirname } from '@tauri-apps/api/path';
 	import { listen } from '@tauri-apps/api/event';
+	import { fade, slide } from 'svelte/transition';
 
 	let quality = $state(80);
 	let resize = $state('NoResizing');
@@ -155,17 +156,20 @@
 <main class="flex">
 	<section class="flex-grow min-w-96 h-screen flex flex-col">
 		<div class="flex-grow w-auto h-auto px-2 flex flex-col overflow-y-auto my-2">
-			{#each images as image}
-				<div class="flex justify-between border-b-2 border-gray-800 py-3 first:pt-0">
+			{#each images as image, i}
+				<div
+					class="flex justify-between border-b-2 border-gray-800 py-3 first:pt-0"
+					in:slide={{ duration: 50, delay: 50 * i }}
+				>
 					<div>
-						<div class="py-1 first:pt-0">{image.filename + image.extension}</div>
+						<div class="py-1 first:pt-0 text-md">{image.filename + image.extension}</div>
 						<div>{image.path}</div>
 					</div>
 					<div>
 						<div
-							class="text-right py-1 first:pt-0"
+							class="text-right text-md py-1 first:pt-0"
 							class:text-green-500={image.status == Status.SUCCESS}
-							class:text-amber-500={image.status == Status.TODO}
+							class:text-primary={image.status == Status.TODO}
 							class:text-red-500={image.status == Status.ERROR}
 						>
 							{image.status}{image.status == Status.ERROR && image.errorMessage !== ''
@@ -184,11 +188,20 @@
 
 		<div class="flex justify-between py-2">
 			{#if !inProgress}
-				<button class="btn btn-primary btn-sm mx-2" onclick={addFiles}>Add images</button>
-				<button class="btn btn-neutral btn-sm" onclick={clear}>Clear</button>
+				<button class="btn btn-primary btn-sm mx-2" onclick={addFiles} in:fade={{ duration: 50 }}
+					>Add images</button
+				>
+				<button class="btn btn-neutral btn-sm" onclick={clear} in:fade={{ duration: 50 }}
+					>Clear</button
+				>
 			{/if}
 			{#if inProgress}
-				<progress class="progress w-full mx-2 h-8" value={done} max={images.length}></progress>
+				<progress
+					class="progress w-full mx-2 h-8"
+					value={done}
+					max={images.length}
+					in:fade={{ duration: 50 }}
+				></progress>
 				<!-- <progress class="progress progress-primary w-full mx-2 h-8" value="37" max="172"></progress> -->
 			{/if}
 		</div>
@@ -363,10 +376,16 @@
 		</div>
 		<div class="px-2 py-2 w-auto">
 			{#if inProgress}
-				<button class="btn btn-error btn-sm w-full" onclick={cancel}>Cancel</button>
+				<button class="btn btn-error btn-sm w-full" onclick={cancel} in:fade={{ duration: 50 }}
+					>Cancel</button
+				>
 			{/if}
 			{#if !inProgress}
-				<button class="btn btn-primary btn-sm w-full" onclick={processImages}>Start</button>
+				<button
+					class="btn btn-primary btn-sm w-full"
+					onclick={processImages}
+					in:fade={{ duration: 50 }}>Start</button
+				>
 			{/if}
 		</div>
 	</section>

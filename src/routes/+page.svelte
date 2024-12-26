@@ -220,7 +220,7 @@
 			{/if}
 		</div>
 	</section>
-	<section class="min-w-72 w-72 h-screen flex flex-col">
+	<section class="min-w-60 w-60 h-screen flex flex-col">
 		<div class="h-auto flex-grow px-2 overflow-y-auto">
 			<div class="border-b-2 border-gray-800 pb-3">
 				<div class="py-2">Image compression</div>
@@ -347,7 +347,7 @@
 								value="same-folder"
 								bind:group={saveTo}
 							/>
-							<span class="ms-2">Same folder</span>
+							<span class="ms-2">Same folder as image</span>
 						</label>
 					</div>
 					<div class="form-control">
@@ -364,7 +364,7 @@
 					</div>
 				</div>
 
-				<div class="flex flex-row gap-2 items-center">
+				<div class="flex flex-row gap-1 items-center">
 					<!-- svelte-ignore a11y_consider_explicit_label -->
 					<button
 						class="btn btn-primary btn-sm"
@@ -381,7 +381,7 @@
 					>
 					<input
 						type="text"
-						class="input input-bordered input-primary input-sm w-56"
+						class="input input-bordered input-primary input-sm w-44"
 						disabled={saveTo === 'same-folder'}
 						bind:value={saveFolder}
 					/>

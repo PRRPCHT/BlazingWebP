@@ -319,7 +319,7 @@
 						class="input input-bordered input-primary input-sm w-20"
 						placeholder="1600"
 						bind:value={resizeTo}
-						disabled={resize === 'no-resizing'}
+						disabled={resize === 'NoResizing'}
 					/>
 					<span>px</span>
 				</label>
@@ -329,7 +329,7 @@
 							type="checkbox"
 							class="checkbox checkbox-primary"
 							bind:checked={isAllowEnlarging}
-							disabled={resize === 'no-resizing'}
+							disabled={resize === 'NoResizing'}
 						/>
 						<span class="ms-2">Allow enlarging</span>
 					</label>

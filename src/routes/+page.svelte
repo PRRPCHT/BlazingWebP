@@ -12,6 +12,7 @@
 	import { basename, extname, dirname } from '@tauri-apps/api/path';
 	import { listen } from '@tauri-apps/api/event';
 	import { fade, slide } from 'svelte/transition';
+	import { convertFileSrc } from '@tauri-apps/api/core';
 
 	let quality = $state(80);
 	let resize = $state('NoResizing');
@@ -161,9 +162,20 @@
 					class="flex justify-between border-b-2 border-gray-800 py-3 first:pt-0"
 					in:slide={{ duration: 50, delay: 50 * i }}
 				>
-					<div>
-						<div class="py-1 first:pt-0 text-md">{image.filename + image.extension}</div>
-						<div>{image.path}</div>
+					<div class="flex flex-row justify-start">
+						<div
+							class="w-12 h-12 flex items-center justify-center overflow-hidden rounded border border-zinc-950"
+						>
+							<img
+								src={convertFileSrc(image.fullPath)}
+								alt={image.filename}
+								class="w-full h-full object-cover"
+							/>
+						</div>
+						<div class="ms-3">
+							<div class="py-1 first:pt-0 text-md">{image.filename + image.extension}</div>
+							<div>{image.path}</div>
+						</div>
 					</div>
 					<div>
 						<div

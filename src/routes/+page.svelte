@@ -1,19 +1,21 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
 	import { stat } from '@tauri-apps/plugin-fs';
-	import type { Image } from '../types/types';
+	import type { Image, Parameters } from '../types/types';
 	import { open } from '@tauri-apps/plugin-dialog';
 	import { basename, extname, dirname } from '@tauri-apps/api/path';
 
 	let name = $state('');
 	let greetMsg = $state('');
 	let quality = $state(80);
-	let resizing = $state('no-resizing');
-	let resize = $state(1600);
+	let resize = $state('NoResizing');
+	let resizeTo = $state(1600);
 	let compression = $state('lossless');
 	let isAllowEnlarging = $state(false);
 	let saveTo = $state('same-folder');
+	let saveFolder = $state('');
 	let images = $state<Image[]>([]);
+
 	// const img1: Image = {
 	// 	filename: 'tartampion.jpg',
 	// 	extension: 'jpg',
@@ -70,10 +72,18 @@
 		return fileSizeKB;
 	}
 
-	async function greet(event: Event) {
+	async function processImages(event: Event) {
 		event.preventDefault();
+		let parameters: Parameters = {
+			isLossless: compression === 'lossless',
+			quality: quality,
+			resize: resize,
+			resizeTo: resizeTo,
+			isEnlargingAllowed: isAllowEnlarging,
+			saveFolder: saveFolder
+		};
 		// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-		greetMsg = await invoke('greet', { name });
+		greetMsg = await invoke('process', { images, parameters });
 	}
 
 	async function addFiles() {
@@ -91,6 +101,7 @@
 			files.forEach(async (file) => {
 				let { filepath, filename, extension } = await extractFileDetails(file);
 				let newImage: Image = {
+					fullPath: file,
 					filename: filename,
 					extension: extension,
 					path: filepath,
@@ -200,8 +211,8 @@
 								type="radio"
 								name="resize"
 								class="radio radio-primary"
-								value="no-resizing"
-								bind:group={resizing}
+								value="NoResizing"
+								bind:group={resize}
 							/>
 							<span class="ms-2">No resizing</span>
 						</label>
@@ -212,8 +223,8 @@
 								type="radio"
 								name="resize"
 								class="radio radio-primary"
-								value="longer-side"
-								bind:group={resizing}
+								value="LongerSide"
+								bind:group={resize}
 							/>
 							<span class="ms-2">Longer side</span>
 						</label>
@@ -224,8 +235,8 @@
 								type="radio"
 								name="resize"
 								class="radio radio-primary"
-								value="shorter-side"
-								bind:group={resizing}
+								value="ShorterSide"
+								bind:group={resize}
 							/>
 							<span class="ms-2">Shorter side</span>
 						</label>
@@ -237,8 +248,8 @@
 						type="number"
 						class="input input-bordered input-primary input-sm w-20"
 						placeholder="1600"
-						bind:value={resize}
-						disabled={resizing === 'no-resizing'}
+						bind:value={resizeTo}
+						disabled={resize === 'no-resizing'}
 					/>
 					<span>px</span>
 				</label>
@@ -248,7 +259,7 @@
 							type="checkbox"
 							class="checkbox checkbox-primary"
 							bind:checked={isAllowEnlarging}
-							disabled={resizing === 'no-resizing'}
+							disabled={resize === 'no-resizing'}
 						/>
 						<span class="ms-2">Allow enlarging</span>
 					</label>
@@ -289,11 +300,14 @@
 						type="text"
 						class="input input-bordered input-primary input-sm w-44"
 						disabled={saveTo === 'same-folder'}
+						bind:value={saveFolder}
 					/>
 				</div>
 			</div>
 		</div>
-		<div class="px-2 py-2 w-auto"><button class="btn btn-primary btn-sm w-full">Start</button></div>
+		<div class="px-2 py-2 w-auto">
+			<button class="btn btn-primary btn-sm w-full" onclick={processImages}>Start</button>
+		</div>
 	</section>
 </main>
 

@@ -12,6 +12,7 @@ export type Image = {
     originalSize: number,
     webpSize: number,
     status: Status,
+    errorMessage: string,
 }
 
 export type Parameters = {
@@ -26,4 +27,9 @@ export type Parameters = {
 export type Success = {
     fullPath: string,
     size: number,
+}
+
+export type ProcessError = {
+    fullPath: string,
+    error: string,
 }

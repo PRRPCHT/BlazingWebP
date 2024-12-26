@@ -64,6 +64,13 @@ struct Success {
     size: u32,
 }
 
+#[derive(Clone, Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ProcessError {
+    full_path: String,
+    error: String,
+}
+
 // #[derive(Debug, serde::Deserialize, serde::Serialize)]
 // struct ImagesList {
 //     images: Vec<Image>,
@@ -165,38 +172,45 @@ fn resize_if_needed(
     }
 }
 
+fn process_image(image: &Image, parameters: &Parameters) -> anyhow::Result<i32> {
+    let src_image = ImageReader::open(image.full_path.as_str())
+        .unwrap()
+        .decode()
+        .unwrap();
+    let sized_image = resize_if_needed(
+        src_image,
+        parameters.resize,
+        parameters.resize_to,
+        parameters.is_enlarging_allowed,
+    )
+    .unwrap();
+    let encoder = match Encoder::from_image(&sized_image) {
+        Ok(the_encoder) => the_encoder,
+        Err(_) => return Err(anyhow::anyhow!("Image can't be converted")),
+    };
+    let encoded = match encoder.encode_simple(parameters.is_lossless, parameters.quality as f32) {
+        Ok(the_encoded) => the_encoded,
+        Err(_) => return Err(anyhow::anyhow!("Image can't be converted")),
+    };
+    let directory_path = if parameters.save_folder != "" {
+        parameters.save_folder.as_str()
+    } else {
+        image.path.as_str()
+    };
+    let output_path = Path::new(directory_path)
+        .join(image.filename.as_str())
+        .with_extension("webp");
+    let file_size = match std::fs::write(&output_path, &*encoded) {
+        Ok(_) => 169,
+        Err(_) => return Err(anyhow::anyhow!("File can't be saved")),
+    };
+    Ok(file_size)
+}
+
 #[tauri::command]
 fn process(app: tauri::AppHandle, images: Vec<Image>, parameters: Parameters) {
     images.par_iter().for_each(|image| {
-        let src_image = ImageReader::open(image.full_path.as_str())
-            .unwrap()
-            .decode()
-            .unwrap();
-        let sized_image = resize_if_needed(
-            src_image,
-            parameters.resize,
-            parameters.resize_to,
-            parameters.is_enlarging_allowed,
-        )
-        .unwrap();
-        let encoder = match Encoder::from_image(&sized_image) {
-            Ok(the_encoder) => the_encoder,
-            Err(_) => todo!(),
-        };
-        let encoded = match encoder.encode_simple(parameters.is_lossless, parameters.quality as f32)
-        {
-            Ok(the_encoded) => the_encoded,
-            Err(_) => todo!(),
-        };
-        let directory_path = if parameters.save_folder != "" {
-            parameters.save_folder.as_str()
-        } else {
-            image.path.as_str()
-        };
-        let output_path = Path::new(directory_path)
-            .join(image.filename.as_str())
-            .with_extension("webp");
-        match std::fs::write(&output_path, &*encoded) {
+        match process_image(image, &parameters) {
             Ok(_) => app
                 .emit(
                     "success",
@@ -206,7 +220,15 @@ fn process(app: tauri::AppHandle, images: Vec<Image>, parameters: Parameters) {
                     },
                 )
                 .unwrap(),
-            Err(_) => todo!(),
+            Err(error) => app
+                .emit(
+                    "error",
+                    ProcessError {
+                        full_path: image.full_path.clone(),
+                        error: error.to_string(),
+                    },
+                )
+                .unwrap(),
         };
     });
 }

@@ -1,7 +1,13 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
 	import { stat } from '@tauri-apps/plugin-fs';
-	import { type Image, type Parameters, type Success, Status } from '../types/types';
+	import {
+		type Image,
+		type Parameters,
+		type Success,
+		Status,
+		type ProcessError
+	} from '../types/types';
 	import { open } from '@tauri-apps/plugin-dialog';
 	import { basename, extname, dirname } from '@tauri-apps/api/path';
 	import { listen } from '@tauri-apps/api/event';
@@ -75,7 +81,8 @@
 					path: filepath,
 					originalSize: await getFileSize(file),
 					webpSize: 0,
-					status: Status.TODO
+					status: Status.TODO,
+					errorMessage: ''
 				};
 				images.push(newImage);
 			});
@@ -87,21 +94,32 @@
 		images = [];
 	}
 
-	function updateList(success: Success) {
-		console.log('Updating for ' + success.fullPath);
+	function updateListSuccess(success: Success) {
 		images.forEach((image) => {
-			console.log('Path: ' + image.fullPath);
 			if (image.fullPath == success.fullPath) {
 				image.status = Status.SUCCESS;
 				image.webpSize = success.size;
-				console.log('Updated in list');
+			}
+		});
+	}
+
+	function updateListError(error: ProcessError) {
+		images.forEach((image) => {
+			if (image.fullPath == error.fullPath) {
+				image.status = Status.ERROR;
+				image.errorMessage = error.error;
 			}
 		});
 	}
 
 	listen<Success>('success', (event) => {
 		console.log(`Succes for ${event.payload.fullPath} with size ${event.payload.size}`);
-		updateList(event.payload);
+		updateListSuccess(event.payload);
+	});
+
+	listen<ProcessError>('error', (event) => {
+		console.log(`Succes for ${event.payload.fullPath} with size ${event.payload.error}`);
+		updateListError(event.payload);
 	});
 </script>
 
@@ -121,9 +139,11 @@
 							class:text-amber-500={image.status == Status.TODO}
 							class:text-red-500={image.status == Status.ERROR}
 						>
-							{image.status}
+							{image.status}{image.status == Status.ERROR && image.errorMessage !== ''
+								? ' : ' + image.errorMessage
+								: ''}
 						</div>
-						<div>
+						<div class="text-right">
 							{image.originalSize} KB {image.status == Status.SUCCESS
 								? '> ' + image.webpSize + ' KB'
 								: ''}

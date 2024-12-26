@@ -61,7 +61,7 @@ struct Parameters {
 #[serde(rename_all = "camelCase")]
 struct Success {
     full_path: String,
-    size: u32,
+    size: u64,
 }
 
 #[derive(Clone, Debug, serde::Serialize)]
@@ -172,7 +172,7 @@ fn resize_if_needed(
     }
 }
 
-fn process_image(image: &Image, parameters: &Parameters) -> anyhow::Result<i32> {
+fn process_image(image: &Image, parameters: &Parameters) -> anyhow::Result<u64> {
     let src_image = ImageReader::open(image.full_path.as_str())
         .unwrap()
         .decode()
@@ -201,22 +201,29 @@ fn process_image(image: &Image, parameters: &Parameters) -> anyhow::Result<i32> 
         .join(image.filename.as_str())
         .with_extension("webp");
     let file_size = match std::fs::write(&output_path, &*encoded) {
-        Ok(_) => 169,
+        Ok(_) => get_file_size(&output_path),
         Err(_) => return Err(anyhow::anyhow!("File can't be saved")),
     };
     Ok(file_size)
+}
+
+fn get_file_size(path: &std::path::PathBuf) -> u64 {
+    match std::fs::metadata(path) {
+        Ok(metadata) => metadata.len() / 1024,
+        Err(_) => 0,
+    }
 }
 
 #[tauri::command]
 fn process(app: tauri::AppHandle, images: Vec<Image>, parameters: Parameters) {
     images.par_iter().for_each(|image| {
         match process_image(image, &parameters) {
-            Ok(_) => app
+            Ok(file_size) => app
                 .emit(
                     "success",
                     Success {
                         full_path: image.full_path.clone(),
-                        size: 169,
+                        size: file_size,
                     },
                 )
                 .unwrap(),

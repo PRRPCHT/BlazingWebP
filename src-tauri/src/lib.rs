@@ -2,7 +2,7 @@ use fast_image_resize::{images::Image as FirImage, PixelType, Resizer};
 use image::{DynamicImage, GenericImageView, ImageBuffer, ImageReader, Rgba};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use std::path::Path;
-use tauri::{Manager, Size};
+use tauri::{Emitter, Manager, Size};
 use webp::Encoder;
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
@@ -55,6 +55,13 @@ struct Parameters {
     resize_to: u32,
     is_enlarging_allowed: bool,
     save_folder: String,
+}
+
+#[derive(Clone, Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct Success {
+    full_path: String,
+    size: u32,
 }
 
 // #[derive(Debug, serde::Deserialize, serde::Serialize)]
@@ -159,7 +166,7 @@ fn resize_if_needed(
 }
 
 #[tauri::command]
-fn process(images: Vec<Image>, parameters: Parameters) {
+fn process(app: tauri::AppHandle, images: Vec<Image>, parameters: Parameters) {
     images.par_iter().for_each(|image| {
         let src_image = ImageReader::open(image.full_path.as_str())
             .unwrap()
@@ -189,7 +196,18 @@ fn process(images: Vec<Image>, parameters: Parameters) {
         let output_path = Path::new(directory_path)
             .join(image.filename.as_str())
             .with_extension("webp");
-        std::fs::write(&output_path, &*encoded).unwrap();
+        match std::fs::write(&output_path, &*encoded) {
+            Ok(_) => app
+                .emit(
+                    "success",
+                    Success {
+                        full_path: image.full_path.clone(),
+                        size: 169,
+                    },
+                )
+                .unwrap(),
+            Err(_) => todo!(),
+        };
     });
 }
 

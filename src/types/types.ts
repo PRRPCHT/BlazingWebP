@@ -1,3 +1,9 @@
+export enum Status {
+    TODO = "TODO",
+    SUCCESS = "SUCCESS",
+    ERROR = "ERROR",
+}
+
 export type Image = {
     fullPath: string,
     filename: string,
@@ -5,7 +11,7 @@ export type Image = {
     path: string,
     originalSize: number,
     webpSize: number,
-    processed: boolean,
+    status: Status,
 }
 
 export type Parameters = {
@@ -15,4 +21,9 @@ export type Parameters = {
     resizeTo: number,
     isEnlargingAllowed: boolean,
     saveFolder: string,
+}
+
+export type Success = {
+    fullPath: string,
+    size: number,
 }

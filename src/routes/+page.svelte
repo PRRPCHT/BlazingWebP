@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
 	import { stat } from '@tauri-apps/plugin-fs';
-	import type { Image, Parameters } from '../types/types';
+	import { type Image, type Parameters, type Success, Status } from '../types/types';
 	import { open } from '@tauri-apps/plugin-dialog';
 	import { basename, extname, dirname } from '@tauri-apps/api/path';
+	import { listen } from '@tauri-apps/api/event';
 
-	let name = $state('');
-	let greetMsg = $state('');
 	let quality = $state(80);
 	let resize = $state('NoResizing');
 	let resizeTo = $state(1600);
@@ -15,35 +14,6 @@
 	let saveTo = $state('same-folder');
 	let saveFolder = $state('');
 	let images = $state<Image[]>([]);
-
-	// const img1: Image = {
-	// 	filename: 'tartampion.jpg',
-	// 	extension: 'jpg',
-	// 	path: '/path/to/the folder/where the photo/is/',
-	// 	originalSize: 678,
-	// 	webpSize: 0,
-	// 	processed: false
-	// };
-	// const img2: Image = {
-	// 	filename: 'bidule.jpg',
-	// 	extension: 'jpg',
-	// 	path: '/path/to/the folder/where the photo/is/',
-	// 	originalSize: 567,
-	// 	webpSize: 188,
-	// 	processed: true
-	// };
-	// images.push(img2);
-	// images.push(img2);
-	// images.push(img2);
-	// images.push(img1);
-	// images.push(img1);
-	// images.push(img1);
-	// images.push(img1);
-	// images.push(img1);
-	// images.push(img1);
-	// images.push(img1);
-	// images.push(img1);
-	// images.push(img1);
 
 	async function extractFileDetails(filePath: string) {
 		let filepath = '';
@@ -64,7 +34,6 @@
 		const fileMetadata = await stat(filePath);
 		let fileSizeKB = 0;
 		if (fileMetadata.size !== undefined) {
-			// Convert size to kilobytes
 			fileSizeKB = Math.round(fileMetadata.size / 1024);
 		} else {
 			fileSizeKB = -1;
@@ -82,8 +51,7 @@
 			isEnlargingAllowed: isAllowEnlarging,
 			saveFolder: saveFolder
 		};
-		// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-		greetMsg = await invoke('process', { images, parameters });
+		await invoke('process', { images, parameters });
 	}
 
 	async function addFiles() {
@@ -107,7 +75,7 @@
 					path: filepath,
 					originalSize: await getFileSize(file),
 					webpSize: 0,
-					processed: false
+					status: Status.TODO
 				};
 				images.push(newImage);
 			});
@@ -118,27 +86,47 @@
 	function clear() {
 		images = [];
 	}
+
+	function updateList(success: Success) {
+		console.log('Updating for ' + success.fullPath);
+		images.forEach((image) => {
+			console.log('Path: ' + image.fullPath);
+			if (image.fullPath == success.fullPath) {
+				image.status = Status.SUCCESS;
+				image.webpSize = success.size;
+				console.log('Updated in list');
+			}
+		});
+	}
+
+	listen<Success>('success', (event) => {
+		console.log(`Succes for ${event.payload.fullPath} with size ${event.payload.size}`);
+		updateList(event.payload);
+	});
 </script>
 
 <main class="flex">
 	<section class="flex-grow min-w-96 h-screen flex flex-col">
 		<div class="flex-grow w-auto h-auto px-2 flex flex-col overflow-y-auto my-2">
 			{#each images as image}
-				<div class="flex justify-between border-b-[1px] border-gray-800 pb-2">
+				<div class="flex justify-between border-b-2 border-gray-800 py-3 first:pt-0">
 					<div>
-						<div>{image.filename + image.extension}</div>
+						<div class="py-1 first:pt-0">{image.filename + image.extension}</div>
 						<div>{image.path}</div>
 					</div>
 					<div>
 						<div
-							class="text-right"
-							class:text-green-500={image.processed}
-							class:text-red-500={!image.processed}
+							class="text-right py-1 first:pt-0"
+							class:text-green-500={image.status == Status.SUCCESS}
+							class:text-amber-500={image.status == Status.TODO}
+							class:text-red-500={image.status == Status.ERROR}
 						>
-							{image.processed ? 'DONE' : 'TODO'}
+							{image.status}
 						</div>
 						<div>
-							{image.originalSize} KB {image.processed ? '> ' + image.webpSize + ' KB' : ''}
+							{image.originalSize} KB {image.status == Status.SUCCESS
+								? '> ' + image.webpSize + ' KB'
+								: ''}
 						</div>
 					</div>
 				</div>
@@ -152,7 +140,7 @@
 	</section>
 	<section class="min-w-72 w-72 h-screen flex flex-col">
 		<div class="h-auto flex-grow px-2 overflow-y-auto">
-			<div class="border-b-[1px] border-gray-800 pb-3">
+			<div class="border-b-2 border-gray-800 pb-3">
 				<div class="py-2">Image compression</div>
 				<div class="">
 					<div class="form-control">
@@ -202,7 +190,7 @@
 					/>
 				</div>
 			</div>
-			<div class="border-b-[1px] border-gray-800 pb-3">
+			<div class="border-b-2 border-gray-800 pb-3">
 				<div class="py-2">Image resize</div>
 				<div class="">
 					<div class="form-control">
@@ -265,7 +253,7 @@
 					</label>
 				</div>
 			</div>
-			<div class="border-b-[1px] border-gray-800 pb-3">
+			<div class="border-b-2 border-gray-800 pb-3">
 				<div class="py-2">Saves images to...</div>
 				<div class="">
 					<div class="form-control">

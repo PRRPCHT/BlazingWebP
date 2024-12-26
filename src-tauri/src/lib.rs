@@ -160,9 +160,7 @@ fn resize_if_needed(
 
 #[tauri::command]
 fn process(images: Vec<Image>, parameters: Parameters) {
-    println!("Hello, {} photos from Rust!", images.len());
     images.par_iter().for_each(|image| {
-        println!("Starting with {}", image.full_path);
         let src_image = ImageReader::open(image.full_path.as_str())
             .unwrap()
             .decode()
@@ -191,7 +189,6 @@ fn process(images: Vec<Image>, parameters: Parameters) {
         let output_path = Path::new(directory_path)
             .join(image.filename.as_str())
             .with_extension("webp");
-        println!("Writing {:?}", output_path);
         std::fs::write(&output_path, &*encoded).unwrap();
     });
 }

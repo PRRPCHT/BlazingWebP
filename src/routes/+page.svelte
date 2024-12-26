@@ -173,13 +173,15 @@
 							/>
 						</div>
 						<div class="ms-3">
-							<div class="py-1 first:pt-0 text-md">{image.filename + image.extension}</div>
-							<div>{image.path}</div>
+							<div class="py-1 first:pt-0 text-md truncate max-w-fit">
+								{image.filename + image.extension}
+							</div>
+							<div class="truncate">{image.path}</div>
 						</div>
 					</div>
-					<div>
+					<div class="me-2 min-w-12">
 						<div
-							class="text-right text-md py-1 first:pt-0"
+							class="text-right text-md py-1 first:pt-0 truncate"
 							class:text-green-500={image.status == Status.SUCCESS}
 							class:text-primary={image.status == Status.TODO}
 							class:text-red-500={image.status == Status.ERROR}
@@ -188,7 +190,7 @@
 								? ' : ' + image.errorMessage
 								: ''}
 						</div>
-						<div class="text-right">
+						<div class="text-right truncate">
 							{image.originalSize} KB {image.status == Status.SUCCESS
 								? '> ' + image.webpSize + ' KB'
 								: ''}
@@ -198,7 +200,7 @@
 			{/each}
 		</div>
 
-		<div class="flex justify-between py-2">
+		<div class="flex justify-between py-2 me-2">
 			{#if !inProgress}
 				<button class="btn btn-primary btn-sm mx-2" onclick={addFiles} in:fade={{ duration: 50 }}
 					>Add images</button

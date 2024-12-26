@@ -64,6 +64,13 @@
 		await invoke('process', { images, parameters });
 	}
 
+	async function cancel(event: Event) {
+		event.preventDefault();
+		done = 0;
+		inProgress = false;
+		await invoke('cancel_process', {});
+	}
+
 	async function getFolder() {
 		const folder = await open({
 			multiple: false,
@@ -101,7 +108,6 @@
 				images.push(newImage);
 			});
 		}
-		console.log(images);
 	}
 
 	function clear() {
@@ -140,7 +146,7 @@
 	});
 
 	listen<ProcessError>('error', (event) => {
-		console.log(`Succes for ${event.payload.fullPath} with size ${event.payload.error}`);
+		console.log(`Error for ${event.payload.fullPath} with ${event.payload.error}`);
 		updateListError(event.payload);
 		checkProgress();
 	});
@@ -357,7 +363,7 @@
 		</div>
 		<div class="px-2 py-2 w-auto">
 			{#if inProgress}
-				<button class="btn btn-error btn-sm w-full" onclick={processImages}>Cancel</button>
+				<button class="btn btn-error btn-sm w-full" onclick={cancel}>Cancel</button>
 			{/if}
 			{#if !inProgress}
 				<button class="btn btn-primary btn-sm w-full" onclick={processImages}>Start</button>

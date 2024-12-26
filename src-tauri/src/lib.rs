@@ -1,9 +1,14 @@
 use fast_image_resize::{images::Image as FirImage, PixelType, Resizer};
 use image::{DynamicImage, GenericImageView, ImageBuffer, ImageReader, Rgba};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-use std::{path::Path, thread};
+use std::{path::Path, sync::Mutex, thread};
 use tauri::{Emitter, Manager, Size};
 use webp::Encoder;
+
+#[derive(Default)]
+struct AppState {
+    pub cancel: bool,
+}
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -81,12 +86,6 @@ struct ProcessError {
 //         ImagesList { images: Vec::new() }
 //     }
 // }
-
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
 
 pub fn resize_dynamic_image(
     image: DynamicImage,
@@ -172,7 +171,11 @@ fn resize_if_needed(
     }
 }
 
-fn process_image(image: &Image, parameters: &Parameters) -> anyhow::Result<u64> {
+fn process_image(
+    app: &tauri::AppHandle,
+    image: &Image,
+    parameters: &Parameters,
+) -> anyhow::Result<u64> {
     let src_image = ImageReader::open(image.full_path.as_str())
         .unwrap()
         .decode()
@@ -197,14 +200,18 @@ fn process_image(image: &Image, parameters: &Parameters) -> anyhow::Result<u64> 
     } else {
         image.path.as_str()
     };
-    let output_path = Path::new(directory_path)
-        .join(image.filename.as_str())
-        .with_extension("webp");
-    let file_size = match std::fs::write(&output_path, &*encoded) {
-        Ok(_) => get_file_size(&output_path),
-        Err(_) => return Err(anyhow::anyhow!("File can't be saved")),
-    };
-    Ok(file_size)
+    if !is_cancel(app) {
+        let output_path = Path::new(directory_path)
+            .join(image.filename.as_str())
+            .with_extension("webp");
+        let file_size = match std::fs::write(&output_path, &*encoded) {
+            Ok(_) => get_file_size(&output_path),
+            Err(_) => return Err(anyhow::anyhow!("File can't be saved")),
+        };
+        Ok(file_size)
+    } else {
+        Ok(0)
+    }
 }
 
 fn get_file_size(path: &std::path::PathBuf) -> u64 {
@@ -214,31 +221,57 @@ fn get_file_size(path: &std::path::PathBuf) -> u64 {
     }
 }
 
+fn is_cancel(app: &tauri::AppHandle) -> bool {
+    let state = app.state::<Mutex<AppState>>();
+    let state = state.lock().unwrap();
+    state.cancel
+}
+
 #[tauri::command]
 fn process(app: tauri::AppHandle, images: Vec<Image>, parameters: Parameters) {
     thread::spawn(move || {
         images.par_iter().for_each(|image| {
-            match process_image(image, &parameters) {
-                Ok(file_size) => app
-                    .emit(
-                        "success",
-                        Success {
-                            full_path: image.full_path.clone(),
-                            size: file_size,
-                        },
-                    )
-                    .unwrap(),
-                Err(error) => app
-                    .emit(
-                        "error",
-                        ProcessError {
-                            full_path: image.full_path.clone(),
-                            error: error.to_string(),
-                        },
-                    )
-                    .unwrap(),
-            };
+            let is_cancel = is_cancel(&app);
+            if !is_cancel {
+                match process_image(&app, image, &parameters) {
+                    Ok(file_size) => {
+                        if file_size > 0 {
+                            app.emit(
+                                "success",
+                                Success {
+                                    full_path: image.full_path.clone(),
+                                    size: file_size,
+                                },
+                            )
+                            .unwrap()
+                        }
+                    }
+                    Err(error) => app
+                        .emit(
+                            "error",
+                            ProcessError {
+                                full_path: image.full_path.clone(),
+                                error: error.to_string(),
+                            },
+                        )
+                        .unwrap(),
+                };
+            }
         });
+        set_status(app, false);
+    });
+}
+
+fn set_status(app: tauri::AppHandle, is_cancel: bool) {
+    let state = app.state::<Mutex<AppState>>();
+    let mut state = state.lock().unwrap();
+    state.cancel = is_cancel;
+}
+
+#[tauri::command]
+fn cancel_process(app: tauri::AppHandle) {
+    thread::spawn(move || {
+        set_status(app, true);
     });
 }
 
@@ -248,9 +281,9 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet])
-        .invoke_handler(tauri::generate_handler![process])
+        .invoke_handler(tauri::generate_handler![process, cancel_process])
         .setup(|app| {
+            app.manage(Mutex::new(AppState::default()));
             let main_window = app.get_webview_window("main").unwrap();
             main_window.set_title("BlazingWebP")?;
             let min_size: Size = Size::Physical(tauri::PhysicalSize::new(800, 1000));

@@ -53,6 +53,10 @@
 
 	async function processImages(event: Event) {
 		event.preventDefault();
+		images.forEach((image) => {
+			image.inProgress = false;
+			image.status = Status.TODO;
+		});
 		let parameters: Parameters = {
 			isLossless: compression === 'lossless',
 			quality: quality,
@@ -162,7 +166,6 @@
 	listen<string>('progress', (event) => {
 		console.log(`Progress started for ${event.payload}`);
 		updateListProgress(event.payload);
-		checkProgress();
 	});
 
 	listen<Success>('success', (event) => {
@@ -492,6 +495,7 @@
 				</div>
 			</div>
 		</div>
+		<div>{inProgress}</div>
 		<div class="px-2 py-2 w-auto">
 			{#if inProgress}
 				<button class="btn btn-error btn-sm w-full" onclick={cancel} in:fade={{ duration: 50 }}

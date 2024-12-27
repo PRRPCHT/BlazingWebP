@@ -13,6 +13,7 @@
 	import { listen } from '@tauri-apps/api/event';
 	import { fade, slide } from 'svelte/transition';
 	import { convertFileSrc } from '@tauri-apps/api/core';
+	import { getVersion } from '@tauri-apps/api/app';
 
 	let quality = $state(80);
 	let resize = $state('NoResizing');
@@ -25,6 +26,7 @@
 	let done = $state(0);
 	let inProgress = $state(false);
 	let showAbout = $state(false);
+	let version = $state('');
 
 	async function extractFileDetails(filePath: string) {
 		let filepath = '';
@@ -164,8 +166,11 @@
 		}
 	}
 
-	function toggleAbout() {
+	async function toggleAbout() {
 		showAbout = !showAbout;
+		if (version === '') {
+			version = await getVersion();
+		}
 	}
 
 	listen<string>('progress', (event) => {
@@ -536,7 +541,7 @@
 			>
 				<img src="/Icon_1024.png" class="w-40 mx-auto" alt="BlazingWebP logo" />
 				<div class="text-6xl mb-2">BlazingWebP</div>
-				<div class="mb-2">Version 0.1.0</div>
+				<div class="mb-2">Version {version}</div>
 				<div class="text-2xl mb-6">
 					Your <span class="italic">blazingly fast</span>* WebP batch converter.
 				</div>

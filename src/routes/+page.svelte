@@ -24,7 +24,7 @@
 	let images = $state<Image[]>([]);
 	let done = $state(0);
 	let inProgress = $state(false);
-	let showAbout = $state(true);
+	let showAbout = $state(false);
 
 	async function extractFileDetails(filePath: string) {
 		let filepath = '';

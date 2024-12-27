@@ -233,6 +233,7 @@ fn process(app: tauri::AppHandle, images: Vec<Image>, parameters: Parameters) {
         images.par_iter().for_each(|image| {
             let is_cancel = is_cancel(&app);
             if !is_cancel {
+                app.emit("progress", image.full_path.clone()).unwrap();
                 match process_image(&app, image, &parameters) {
                     Ok(file_size) => {
                         if file_size > 0 {

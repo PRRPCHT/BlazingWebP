@@ -13,6 +13,7 @@ export type Image = {
     webpSize: number,
     status: Status,
     errorMessage: string,
+    inProgress: boolean
 }
 
 export type Parameters = {

@@ -70,6 +70,7 @@
 		event.preventDefault();
 		done = 0;
 		inProgress = false;
+		clearListProgress();
 		await invoke('cancel_process', {});
 	}
 
@@ -105,7 +106,8 @@
 					originalSize: await getFileSize(file),
 					webpSize: 0,
 					status: Status.TODO,
-					errorMessage: ''
+					errorMessage: '',
+					inProgress: false
 				};
 				images.push(newImage);
 			});
@@ -116,11 +118,26 @@
 		images = [];
 	}
 
+	function clearListProgress() {
+		images.forEach((image) => {
+			image.inProgress = false;
+		});
+	}
+
+	function updateListProgress(imagePath: string) {
+		images.forEach((image) => {
+			if (image.fullPath == imagePath) {
+				image.inProgress = true;
+			}
+		});
+	}
+
 	function updateListSuccess(success: Success) {
 		images.forEach((image) => {
 			if (image.fullPath == success.fullPath) {
 				image.status = Status.SUCCESS;
 				image.webpSize = success.size;
+				image.inProgress = false;
 			}
 		});
 	}
@@ -130,6 +147,7 @@
 			if (image.fullPath == error.fullPath) {
 				image.status = Status.ERROR;
 				image.errorMessage = error.error;
+				image.inProgress = false;
 			}
 		});
 	}
@@ -140,6 +158,12 @@
 			inProgress = false;
 		}
 	}
+
+	listen<string>('progress', (event) => {
+		console.log(`Progress started for ${event.payload}`);
+		updateListProgress(event.payload);
+		checkProgress();
+	});
 
 	listen<Success>('success', (event) => {
 		console.log(`Succes for ${event.payload.fullPath} with size ${event.payload.size}`);
@@ -180,16 +204,96 @@
 						</div>
 					</div>
 					<div class="me-2 min-w-12">
-						<div
-							class="text-right text-md py-1 first:pt-0 truncate"
-							class:text-success={image.status == Status.SUCCESS}
-							class:text-primary={image.status == Status.TODO}
-							class:text-error={image.status == Status.ERROR}
-						>
-							{image.status}{image.status == Status.ERROR && image.errorMessage !== ''
-								? ' : ' + image.errorMessage
-								: ''}
-						</div>
+						{#if image.inProgress}
+							<div class="h-6">
+								<svg
+									width="60"
+									height="15"
+									viewBox="0 0 120 30"
+									xmlns="http://www.w3.org/2000/svg"
+									fill="#477A91"
+								>
+									<circle cx="15" cy="15" r="15">
+										<animate
+											attributeName="r"
+											from="15"
+											to="15"
+											begin="0s"
+											dur="0.8s"
+											values="15;9;15"
+											calcMode="linear"
+											repeatCount="indefinite"
+										/>
+										<animate
+											attributeName="fill-opacity"
+											from="1"
+											to="1"
+											begin="0s"
+											dur="0.8s"
+											values="1;.5;1"
+											calcMode="linear"
+											repeatCount="indefinite"
+										/>
+									</circle>
+									<circle cx="60" cy="15" r="9" fill-opacity="0.3">
+										<animate
+											attributeName="r"
+											from="9"
+											to="9"
+											begin="0s"
+											dur="0.8s"
+											values="9;15;9"
+											calcMode="linear"
+											repeatCount="indefinite"
+										/>
+										<animate
+											attributeName="fill-opacity"
+											from="0.5"
+											to="0.5"
+											begin="0s"
+											dur="0.8s"
+											values=".5;1;.5"
+											calcMode="linear"
+											repeatCount="indefinite"
+										/>
+									</circle>
+									<circle cx="105" cy="15" r="15">
+										<animate
+											attributeName="r"
+											from="15"
+											to="15"
+											begin="0s"
+											dur="0.8s"
+											values="15;9;15"
+											calcMode="linear"
+											repeatCount="indefinite"
+										/>
+										<animate
+											attributeName="fill-opacity"
+											from="1"
+											to="1"
+											begin="0s"
+											dur="0.8s"
+											values="1;.5;1"
+											calcMode="linear"
+											repeatCount="indefinite"
+										/>
+									</circle>
+								</svg>
+							</div>
+						{/if}
+						{#if !image.inProgress}
+							<div
+								class="text-right text-md py-1 first:pt-0 truncate"
+								class:text-success={image.status == Status.SUCCESS}
+								class:text-primary={image.status == Status.TODO}
+								class:text-error={image.status == Status.ERROR}
+							>
+								{image.status}{image.status == Status.ERROR && image.errorMessage !== ''
+									? ' : ' + image.errorMessage
+									: ''}
+							</div>
+						{/if}
 						<div class="text-right truncate">
 							{image.originalSize} KB {image.status == Status.SUCCESS
 								? '> ' + image.webpSize + ' KB'
@@ -408,5 +512,76 @@
 <style>
 	.disabled-range {
 		--range-shdw: dark-gray;
+	}
+	.dot-pulse {
+		position: relative;
+		left: -9999px;
+		width: 10px;
+		height: 10px;
+		border-radius: 5px;
+		background-color: #9880ff;
+		color: #9880ff;
+		box-shadow: 9999px 0 0 -5px;
+		animation: dot-pulse 1.5s infinite linear;
+		animation-delay: 0.25s;
+	}
+	.dot-pulse::before,
+	.dot-pulse::after {
+		content: '';
+		display: inline-block;
+		position: absolute;
+		top: 0;
+		width: 10px;
+		height: 10px;
+		border-radius: 5px;
+		background-color: #9880ff;
+		color: #9880ff;
+	}
+	.dot-pulse::before {
+		box-shadow: 9984px 0 0 -5px;
+		animation: dot-pulse-before 1.5s infinite linear;
+		animation-delay: 0s;
+	}
+	.dot-pulse::after {
+		box-shadow: 10014px 0 0 -5px;
+		animation: dot-pulse-after 1.5s infinite linear;
+		animation-delay: 0.5s;
+	}
+
+	@keyframes dot-pulse-before {
+		0% {
+			box-shadow: 9984px 0 0 -5px;
+		}
+		30% {
+			box-shadow: 9984px 0 0 2px;
+		}
+		60%,
+		100% {
+			box-shadow: 9984px 0 0 -5px;
+		}
+	}
+	@keyframes dot-pulse {
+		0% {
+			box-shadow: 9999px 0 0 -5px;
+		}
+		30% {
+			box-shadow: 9999px 0 0 2px;
+		}
+		60%,
+		100% {
+			box-shadow: 9999px 0 0 -5px;
+		}
+	}
+	@keyframes dot-pulse-after {
+		0% {
+			box-shadow: 10014px 0 0 -5px;
+		}
+		30% {
+			box-shadow: 10014px 0 0 2px;
+		}
+		60%,
+		100% {
+			box-shadow: 10014px 0 0 -5px;
+		}
 	}
 </style>

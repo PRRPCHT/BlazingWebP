@@ -568,7 +568,7 @@
 					<img src="/beer.svg" class="h-12" alt="Beer!" />
 				</div> -->
 				<div class="mb-2">
-					This software is distributed "as is" with no guarantee according to the GPL3 licence.
+					This software is distributed "as is" with no guarantee according to the GPLv2 licence.
 				</div>
 				<div class="mb-2">
 					Follow the team behind BlazingWebP on <a

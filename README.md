@@ -18,3 +18,7 @@ _Photos provided by [Pierre Pichot](https://pierrepichot.com)._
 
 - Drag and drop files to the app
 - WebP to JPEG/PNG conversion
+
+## Licence
+
+[GPLv2](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html) licence.

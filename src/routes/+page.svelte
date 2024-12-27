@@ -182,9 +182,9 @@
 					<div class="me-2 min-w-12">
 						<div
 							class="text-right text-md py-1 first:pt-0 truncate"
-							class:text-green-500={image.status == Status.SUCCESS}
+							class:text-success={image.status == Status.SUCCESS}
 							class:text-primary={image.status == Status.TODO}
-							class:text-red-500={image.status == Status.ERROR}
+							class:text-error={image.status == Status.ERROR}
 						>
 							{image.status}{image.status == Status.ERROR && image.errorMessage !== ''
 								? ' : ' + image.errorMessage
@@ -211,7 +211,7 @@
 			{/if}
 			{#if inProgress}
 				<progress
-					class="progress w-full mx-2 h-8"
+					class="progress progress-secondary w-full mx-2 h-8"
 					value={done}
 					max={images.length}
 					in:fade={{ duration: 50 }}

@@ -495,7 +495,6 @@
 				</div>
 			</div>
 		</div>
-		<div>{inProgress}</div>
 		<div class="px-2 py-2 w-auto">
 			{#if inProgress}
 				<button class="btn btn-error btn-sm w-full" onclick={cancel} in:fade={{ duration: 50 }}

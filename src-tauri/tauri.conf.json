@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "blazingwebp",
+  "productName": "BlazingWebP",
   "version": "0.1.0",
   "identifier": "app.blazingwebp",
   "build": {
@@ -12,9 +12,9 @@
   "app": {
     "windows": [
       {
-        "title": "easywebp",
-        "width": 800,
-        "height": 600
+        "title": "BlazingWebP",
+        "width": 1000,
+        "height": 700
       }
     ],
     "security": {

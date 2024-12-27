@@ -3,6 +3,24 @@
 version = 3
 
 [[package]]
+name = "BlazingWebP"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fast_image_resize",
+ "image",
+ "rayon",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-fs",
+ "tauri-plugin-opener",
+ "webp",
+]
+
+[[package]]
 name = "addr2line"
 version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -372,24 +390,6 @@ name = "bitstream-io"
 version = "2.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b81e1519b0d82120d2fd469d5bfb2919a9361c48b02d82d04befc1cdd2002452"
-
-[[package]]
-name = "blazingwebp"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "fast_image_resize",
- "image",
- "rayon",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-fs",
- "tauri-plugin-opener",
- "webp",
-]
 
 [[package]]
 name = "block"

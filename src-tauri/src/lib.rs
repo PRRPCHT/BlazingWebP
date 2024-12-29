@@ -2,7 +2,7 @@ use fast_image_resize::{images::Image as FirImage, PixelType, Resizer};
 use image::{DynamicImage, GenericImageView, ImageBuffer, ImageReader, Rgba};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use std::{path::Path, sync::Mutex, thread};
-use tauri::{Emitter, Manager, Size};
+use tauri::{Emitter, Manager};
 use webp::Encoder;
 
 #[derive(Default)]
@@ -75,17 +75,6 @@ struct ProcessError {
     full_path: String,
     error: String,
 }
-
-// #[derive(Debug, serde::Deserialize, serde::Serialize)]
-// struct ImagesList {
-//     images: Vec<Image>,
-// }
-
-// impl ImagesList {
-//     pub fn new() -> ImagesList {
-//         ImagesList { images: Vec::new() }
-//     }
-// }
 
 pub fn resize_dynamic_image(
     image: DynamicImage,
@@ -287,8 +276,6 @@ pub fn run() {
             app.manage(Mutex::new(AppState::default()));
             let main_window = app.get_webview_window("main").unwrap();
             main_window.set_title("BlazingWebP")?;
-            let min_size: Size = Size::Physical(tauri::PhysicalSize::new(800, 1000));
-            main_window.set_min_size(min_size.into())?;
             Ok(())
         })
         .run(tauri::generate_context!())

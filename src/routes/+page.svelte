@@ -16,6 +16,7 @@
 	import { convertFileSrc } from '@tauri-apps/api/core';
 	import { getVersion } from '@tauri-apps/api/app';
 	import { getCurrentWebview } from '@tauri-apps/api/webview';
+	import { elasticInOut } from 'svelte/easing';
 	let quality = $state(80);
 	let resize = $state('NoResizing');
 	let resizeTo = $state(1600);
@@ -29,6 +30,8 @@
 	let showAbout = $state(false);
 	let version = $state('');
 	let dropInProgress = $state(false);
+	let acceptedExtensions = ['png', 'jpeg', 'jpg', 'webp'];
+	let rejectedFiles = $state<string[]>([]);
 
 	onMount(() => {
 		const setupDragDrop = async () => {
@@ -140,7 +143,7 @@
 			filters: [
 				{
 					name: 'Images',
-					extensions: ['png', 'jpeg', 'jpg', 'webp']
+					extensions: acceptedExtensions
 				}
 			]
 		});
@@ -152,19 +155,28 @@
 	async function addFiles(files: string[]) {
 		files.forEach(async (file) => {
 			let { filepath, filename, extension } = await extractFileDetails(file);
-			let newImage: Image = {
-				fullPath: file,
-				filename: filename,
-				extension: extension,
-				path: filepath,
-				originalSize: await getFileSize(file),
-				webpSize: 0,
-				status: Status.TODO,
-				errorMessage: '',
-				inProgress: false
-			};
-			images.push(newImage);
+			if (acceptedExtensions.includes(extension.toLowerCase())) {
+				let newImage: Image = {
+					fullPath: file,
+					filename: filename,
+					extension: extension,
+					path: filepath,
+					originalSize: await getFileSize(file),
+					webpSize: 0,
+					status: Status.TODO,
+					errorMessage: '',
+					inProgress: false
+				};
+				images.push(newImage);
+			} else {
+				rejectedFiles.push(file);
+			}
 		});
+		//if (rejectedFiles.length > 0) {
+		setTimeout(() => {
+			rejectedFiles = [];
+		}, 3000);
+		//}
 	}
 
 	function clear() {
@@ -674,6 +686,17 @@
 			</div>
 		</section>
 	{/if}
+	<div class="toast toast-end">
+		{#each rejectedFiles as file, i}
+			<div
+				class="alert alert-error"
+				in:fade={{ duration: 150, delay: 200 * i, easing: elasticInOut }}
+				out:fade={{ duration: 150, delay: 200 * i, easing: elasticInOut }}
+			>
+				<span>File not supported: {file}</span>
+			</div>
+		{/each}
+	</div>
 </main>
 
 <style>

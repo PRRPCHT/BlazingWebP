@@ -257,10 +257,8 @@
 
 	function dropFile(ev: DragEvent) {
 		ev.preventDefault();
-		console.log('Drop: ' + ev);
 		if (ev.dataTransfer != null) {
 			const files = ev.dataTransfer.files;
-			console.log('Files: ' + files);
 		}
 	}
 </script>

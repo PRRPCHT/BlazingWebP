@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
 	import { stat } from '@tauri-apps/plugin-fs';
+	import { onMount } from 'svelte';
 	import {
 		type Image,
 		type Parameters,
@@ -14,7 +15,7 @@
 	import { fade, slide } from 'svelte/transition';
 	import { convertFileSrc } from '@tauri-apps/api/core';
 	import { getVersion } from '@tauri-apps/api/app';
-
+	import { getCurrentWebview } from '@tauri-apps/api/webview';
 	let quality = $state(80);
 	let resize = $state('NoResizing');
 	let resizeTo = $state(1600);
@@ -27,6 +28,47 @@
 	let inProgress = $state(false);
 	let showAbout = $state(false);
 	let version = $state('');
+	let dropInProgress = $state(false);
+
+	onMount(() => {
+		const setupDragDrop = async () => {
+			const unlisten = await getCurrentWebview().onDragDropEvent((event) => {
+				if (!showAbout && !inProgress) {
+					if (event.payload.type === 'over') {
+						dropInProgress = true;
+					} else if (event.payload.type === 'drop') {
+						let files = event.payload.paths;
+						if (files != null) {
+							console.log('User dropped', files);
+							addFiles(files);
+						}
+						dropInProgress = false;
+					} else {
+						console.log('File drop cancelled');
+						dropInProgress = false;
+					}
+				}
+			});
+
+			return unlisten;
+		};
+
+		let unlisten: (() => void) | undefined;
+
+		setupDragDrop()
+			.then((fn) => {
+				unlisten = fn;
+			})
+			.catch((error) => {
+				console.error('Error setting up drag-and-drop:', error);
+			});
+
+		return () => {
+			if (unlisten) {
+				unlisten();
+			}
+		};
+	});
 
 	async function extractFileDetails(filePath: string) {
 		let filepath = '';
@@ -91,7 +133,7 @@
 		}
 	}
 
-	async function addFiles() {
+	async function addFilesAction() {
 		const files = await open({
 			multiple: true,
 			directory: false,
@@ -103,22 +145,26 @@
 			]
 		});
 		if (files != null) {
-			files.forEach(async (file) => {
-				let { filepath, filename, extension } = await extractFileDetails(file);
-				let newImage: Image = {
-					fullPath: file,
-					filename: filename,
-					extension: extension,
-					path: filepath,
-					originalSize: await getFileSize(file),
-					webpSize: 0,
-					status: Status.TODO,
-					errorMessage: '',
-					inProgress: false
-				};
-				images.push(newImage);
-			});
+			addFiles(files);
 		}
+	}
+
+	async function addFiles(files: string[]) {
+		files.forEach(async (file) => {
+			let { filepath, filename, extension } = await extractFileDetails(file);
+			let newImage: Image = {
+				fullPath: file,
+				filename: filename,
+				extension: extension,
+				path: filepath,
+				originalSize: await getFileSize(file),
+				webpSize: 0,
+				status: Status.TODO,
+				errorMessage: '',
+				inProgress: false
+			};
+			images.push(newImage);
+		});
 	}
 
 	function clear() {
@@ -189,12 +235,39 @@
 		updateListError(event.payload);
 		checkProgress();
 	});
+
+	export function dragover(ev: DragEvent) {
+		ev.preventDefault();
+		if (ev.dataTransfer != null) {
+			ev.dataTransfer.dropEffect = 'move';
+		}
+	}
+
+	function dropFile(ev: DragEvent) {
+		ev.preventDefault();
+		console.log('Drop: ' + ev);
+		if (ev.dataTransfer != null) {
+			const files = ev.dataTransfer.files;
+			console.log('Files: ' + files);
+		}
+	}
 </script>
 
 <main class="flex">
-	{#if !showAbout}
+	{#if !showAbout && !dropInProgress}
 		<section class="flex-grow min-w-96 h-screen flex flex-col">
-			<div class="flex-grow w-auto h-auto px-2 flex flex-col overflow-y-auto my-2">
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<div
+				class="flex-grow w-auto h-auto px-2 flex flex-col overflow-y-auto my-2"
+				class:justify-center={images.length == 0}
+			>
+				{#if images.length == 0}
+					<div class="text-center text-slate-500">
+						<div class="text-2xl mb-6">Drop your images here!</div>
+						<div class="text-2xl mb-6">Or use the Add Images button below.</div>
+						<div class="">Accepted formats: PNG, JPEG, WEBP.</div>
+					</div>
+				{/if}
 				{#each images as image, i}
 					<div
 						class="flex justify-between border-b-2 border-gray-800 py-3 first:pt-0"
@@ -320,8 +393,10 @@
 
 			<div class="flex justify-between py-2 me-2">
 				{#if !inProgress}
-					<button class="btn btn-primary btn-sm mx-2" onclick={addFiles} in:fade={{ duration: 50 }}
-						>Add images</button
+					<button
+						class="btn btn-primary btn-sm mx-2"
+						onclick={addFilesAction}
+						in:fade={{ duration: 50 }}>Add images</button
 					>
 					<div class="flex flex-row">
 						<button
@@ -534,7 +609,7 @@
 			</div>
 		</section>
 	{/if}
-	{#if showAbout}
+	{#if showAbout && !dropInProgress}
 		<section class="flex-grow w-screen h-screen flex flex-col" in:fade={{ duration: 50 }}>
 			<div
 				class="flex-grow w-auto h-auto px-2 flex flex-col my-2 container mx-auto text-center justify-center"
@@ -586,6 +661,16 @@
 					in:fade={{ duration: 50 }}>Close</button
 				>
 				<div class="w-48 text-end truncate mx-2 mt-3">*If you know, you know...</div>
+			</div>
+		</section>
+	{/if}
+	{#if dropInProgress}
+		<section class="flex-grow w-screen h-screen flex flex-col" in:fade={{ duration: 50 }}>
+			<div
+				class="flex-grow w-auto h-auto px-2 flex flex-col my-2 container mx-auto text-center justify-center"
+			>
+				<div class="text-2xl mb-6">Drop your images here!</div>
+				<div class="mb-2">Accepted formats: PNG, JPEG, WEBP.</div>
 			</div>
 		</section>
 	{/if}

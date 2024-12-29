@@ -7,7 +7,9 @@
 		type Parameters,
 		type Success,
 		Status,
-		type ProcessError
+		type ProcessError,
+		type ImageError,
+		ImageErrorType
 	} from '../types/types';
 	import { open } from '@tauri-apps/plugin-dialog';
 	import { basename, extname, dirname } from '@tauri-apps/api/path';
@@ -31,7 +33,9 @@
 	let version = $state('');
 	let dropInProgress = $state(false);
 	let acceptedExtensions = ['png', 'jpeg', 'jpg', 'webp'];
-	let rejectedFiles = $state<string[]>([]);
+	let acceptedFiles = $state<string[]>([]);
+	let errors = $state<ImageError[]>([]);
+	let animationTime = $derived(images.length > 10 ? 50 : 100);
 
 	onMount(() => {
 		const setupDragDrop = async () => {
@@ -156,25 +160,38 @@
 		files.forEach(async (file) => {
 			let { filepath, filename, extension } = await extractFileDetails(file);
 			if (acceptedExtensions.includes(extension.toLowerCase())) {
-				let newImage: Image = {
-					fullPath: file,
-					filename: filename,
-					extension: extension,
-					path: filepath,
-					originalSize: await getFileSize(file),
-					webpSize: 0,
-					status: Status.TODO,
-					errorMessage: '',
-					inProgress: false
-				};
-				images.push(newImage);
+				if (!acceptedFiles.includes(file)) {
+					let newImage: Image = {
+						fullPath: file,
+						filename: filename,
+						extension: extension,
+						path: filepath,
+						originalSize: await getFileSize(file),
+						webpSize: 0,
+						status: Status.TODO,
+						errorMessage: '',
+						inProgress: false
+					};
+					images.push(newImage);
+					acceptedFiles.push(file);
+				} else {
+					let error: ImageError = {
+						type: ImageErrorType.ALREADY_EXISTS,
+						file: file
+					};
+					errors.push(error);
+				}
 			} else {
-				rejectedFiles.push(file);
+				let error: ImageError = {
+					type: ImageErrorType.WRONG_FORMAT,
+					file: file
+				};
+				errors.push(error);
 			}
 		});
 		//if (rejectedFiles.length > 0) {
 		setTimeout(() => {
-			rejectedFiles = [];
+			errors = [];
 		}, 3000);
 		//}
 	}
@@ -261,6 +278,20 @@
 			const files = ev.dataTransfer.files;
 		}
 	}
+
+	function prettyError(error: ImageError): string {
+		switch (error.type) {
+			case ImageErrorType.ALREADY_EXISTS:
+				return 'Image already in the list: ' + error.file;
+				break;
+			case ImageErrorType.WRONG_FORMAT:
+				return 'Wrong format for file: ' + error.file;
+				break;
+			default:
+				return 'Error with file: ' + error.file;
+				break;
+		}
+	}
 </script>
 
 <main class="flex">
@@ -281,7 +312,7 @@
 				{#each images as image, i}
 					<div
 						class="flex justify-between border-b-2 border-gray-800 py-3 first:pt-0"
-						in:fade={{ duration: 50, delay: 50 * i, easing: elasticInOut }}
+						in:fade={{ duration: animationTime, delay: animationTime * i, easing: elasticInOut }}
 					>
 						<div class="flex flex-row justify-start">
 							<div
@@ -406,13 +437,13 @@
 					<button
 						class="btn btn-primary btn-sm mx-2"
 						onclick={addFilesAction}
-						in:fade={{ duration: 50 }}>Add images</button
+						in:fade={{ duration: 50, easing: elasticInOut }}>Add images</button
 					>
 					<div class="flex flex-row">
 						<button
 							class="btn btn-neutral btn-sm mx-2"
 							onclick={toggleAbout}
-							in:fade={{ duration: 50 }}>About...</button
+							in:fade={{ duration: 50, easing: elasticInOut }}>About...</button
 						>
 						<button
 							class="btn btn-neutral btn-sm"
@@ -695,13 +726,13 @@
 		</section>
 	{/if}
 	<div class="toast toast-end">
-		{#each rejectedFiles as file, i}
+		{#each errors as error, i}
 			<div
 				class="alert alert-error"
 				in:fade={{ duration: 150, delay: 200 * i, easing: elasticInOut }}
 				out:fade={{ duration: 150, delay: 200 * i, easing: elasticInOut }}
 			>
-				<span>File not supported: {file}</span>
+				<span>{prettyError(error)}</span>
 			</div>
 		{/each}
 	</div>

@@ -16,6 +16,16 @@ export type Image = {
     inProgress: boolean
 }
 
+export enum ImageErrorType {
+    WRONG_FORMAT,
+    ALREADY_EXISTS,
+}
+
+export type ImageError = {
+    type: ImageErrorType,
+    file: string,
+}
+
 export type Parameters = {
     isLossless: boolean,
     quality: number,

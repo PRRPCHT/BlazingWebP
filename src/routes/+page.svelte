@@ -283,7 +283,7 @@
 				{#each images as image, i}
 					<div
 						class="flex justify-between border-b-2 border-gray-800 py-3 first:pt-0"
-						in:slide={{ duration: 50, delay: 50 * i }}
+						in:fade={{ duration: 50, delay: 50 * i, easing: elasticInOut }}
 					>
 						<div class="flex flex-row justify-start">
 							<div
@@ -416,8 +416,10 @@
 							onclick={toggleAbout}
 							in:fade={{ duration: 50 }}>About...</button
 						>
-						<button class="btn btn-neutral btn-sm" onclick={clear} in:fade={{ duration: 50 }}
-							>Clear images</button
+						<button
+							class="btn btn-neutral btn-sm"
+							onclick={clear}
+							in:fade={{ duration: 50, easing: elasticInOut }}>Clear images</button
 						>
 					</div>
 				{/if}
@@ -607,22 +609,27 @@
 			</div>
 			<div class="px-2 py-2 w-auto">
 				{#if inProgress}
-					<button class="btn btn-error btn-sm" onclick={cancel} in:fade={{ duration: 50 }}
-						>Cancel</button
+					<button
+						class="btn btn-error btn-sm"
+						onclick={cancel}
+						in:fade={{ duration: 50, easing: elasticInOut }}>Cancel</button
 					>
 				{/if}
 				{#if !inProgress}
 					<button
 						class="btn btn-primary btn-sm w-full"
 						onclick={processImages}
-						in:fade={{ duration: 50 }}>Start</button
+						in:fade={{ duration: 50, easing: elasticInOut }}>Start</button
 					>
 				{/if}
 			</div>
 		</section>
 	{/if}
 	{#if showAbout && !dropInProgress}
-		<section class="flex-grow w-screen h-screen flex flex-col" in:fade={{ duration: 50 }}>
+		<section
+			class="flex-grow w-screen h-screen flex flex-col"
+			in:fade={{ duration: 50, easing: elasticInOut }}
+		>
 			<div
 				class="flex-grow w-auto h-auto px-2 flex flex-col my-2 container mx-auto text-center justify-center"
 			>
@@ -670,14 +677,17 @@
 				<button
 					class="btn btn-primary btn-sm mx-2 w-24"
 					onclick={toggleAbout}
-					in:fade={{ duration: 50 }}>Close</button
+					in:fade={{ duration: 50, easing: elasticInOut }}>Close</button
 				>
 				<div class="w-48 text-end truncate mx-2 mt-3">*If you know, you know...</div>
 			</div>
 		</section>
 	{/if}
 	{#if dropInProgress}
-		<section class="flex-grow w-screen h-screen flex flex-col" in:fade={{ duration: 50 }}>
+		<section
+			class="flex-grow w-screen h-screen flex flex-col"
+			in:fade={{ duration: 50, easing: elasticInOut }}
+		>
 			<div
 				class="flex-grow w-auto h-auto px-2 flex flex-col my-2 container mx-auto text-center justify-center"
 			>

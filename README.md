@@ -16,7 +16,7 @@ _Photos provided by [Pierre Pichot](https://pierrepichot.com)._
 
 ## Roadmap
 
-- Drag and drop files to the app
+- ~~Drag and drop files to the app~~ - DONE in 0.2.0
 - WebP to JPEG/PNG conversion
 
 ## Limitations

@@ -140,7 +140,7 @@
 			filters: [
 				{
 					name: 'Images',
-					extensions: ['png', 'jpeg', 'jpg']
+					extensions: ['png', 'jpeg', 'jpg', 'webp']
 				}
 			]
 		});

@@ -27,6 +27,7 @@ export type ImageError = {
 }
 
 export type Parameters = {
+    action: string,
     isLossless: boolean,
     quality: number,
     resize: string,

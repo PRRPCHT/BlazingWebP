@@ -1,6 +1,8 @@
 use fast_image_resize::{images::Image as FirImage, PixelType, Resizer};
-use image::{DynamicImage, GenericImageView, ImageBuffer, ImageReader, Rgba};
+use image::codecs::jpeg::JpegEncoder;
+use image::{DynamicImage, GenericImageView, ImageBuffer, ImageEncoder, ImageReader, Rgba};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use std::io::Cursor;
 use std::{path::Path, sync::Mutex, thread};
 use tauri::{Emitter, Manager};
 use webp::Encoder;
@@ -51,9 +53,17 @@ enum Resize {
     ShorterSide,
 }
 
+#[derive(Copy, Clone, Debug, serde::Deserialize)]
+enum ConvertTo {
+    WebP,
+    JPEG,
+    PNG,
+}
+
 #[derive(Debug, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Parameters {
+    action: ConvertTo,
     is_lossless: bool,
     quality: u32,
     resize: Resize,
@@ -160,23 +170,8 @@ fn resize_if_needed(
     }
 }
 
-fn process_image(
-    app: &tauri::AppHandle,
-    image: &Image,
-    parameters: &Parameters,
-) -> anyhow::Result<u64> {
-    let src_image = ImageReader::open(image.full_path.as_str())
-        .unwrap()
-        .decode()
-        .unwrap();
-    let sized_image = resize_if_needed(
-        src_image,
-        parameters.resize,
-        parameters.resize_to,
-        parameters.is_enlarging_allowed,
-    )
-    .unwrap();
-    let encoder = match Encoder::from_image(&sized_image) {
+fn convert_to_webp(image: &DynamicImage, parameters: &Parameters) -> anyhow::Result<Vec<u8>> {
+    let encoder = match Encoder::from_image(image) {
         Ok(the_encoder) => the_encoder,
         Err(_) => return Err(anyhow::anyhow!("Image can't be converted")),
     };
@@ -184,15 +179,67 @@ fn process_image(
         Ok(the_encoded) => the_encoded,
         Err(_) => return Err(anyhow::anyhow!("Image can't be converted")),
     };
+    Ok(encoded.to_vec())
+}
+
+fn convert_to_jpeg(image: &DynamicImage, parameters: &Parameters) -> anyhow::Result<Vec<u8>> {
+    let rgb_image = match image.color() {
+        image::ColorType::Rgba8 => image.to_rgb8(),
+        image::ColorType::Rgb8 => image.to_rgb8(),
+        _ => return Err(anyhow::anyhow!("Unsupported color type for JPEG encoding")),
+    };
+    let mut encoded = Vec::new();
+    let encoder = JpegEncoder::new_with_quality(&mut encoded, parameters.quality as u8);
+    encoder.write_image(
+        &rgb_image,
+        rgb_image.width(),
+        rgb_image.height(),
+        image::ColorType::Rgb8.into(),
+    )?;
+    Ok(encoded)
+}
+
+fn convert_to_png(image: &DynamicImage) -> anyhow::Result<Vec<u8>> {
+    let mut encoded = Vec::new();
+    {
+        // Wrap `encoded` in a Cursor to provide Seek functionality
+        let mut cursor = Cursor::new(&mut encoded);
+        image.write_to(&mut cursor, image::ImageFormat::Png)?;
+    }
+    Ok(encoded)
+}
+
+fn process_image(
+    app: &tauri::AppHandle,
+    image: &Image,
+    parameters: &Parameters,
+) -> anyhow::Result<u64> {
+    let src_image = ImageReader::open(image.full_path.as_str())?.decode()?;
+    let sized_image = resize_if_needed(
+        src_image,
+        parameters.resize,
+        parameters.resize_to,
+        parameters.is_enlarging_allowed,
+    )?;
+    let encoded = match parameters.action {
+        ConvertTo::WebP => convert_to_webp(&sized_image, parameters)?,
+        ConvertTo::JPEG => convert_to_jpeg(&sized_image, parameters)?,
+        ConvertTo::PNG => convert_to_png(&sized_image)?,
+    };
     let directory_path = if parameters.save_folder != "" {
         parameters.save_folder.as_str()
     } else {
         image.path.as_str()
     };
+    let extension = match parameters.action {
+        ConvertTo::WebP => "webp",
+        ConvertTo::JPEG => "jpg",
+        ConvertTo::PNG => "png",
+    };
     if !is_cancel(app) {
         let output_path = Path::new(directory_path)
             .join(image.filename.as_str())
-            .with_extension("webp");
+            .with_extension(extension);
         let file_size = match std::fs::write(&output_path, &*encoded) {
             Ok(_) => get_file_size(&output_path),
             Err(_) => return Err(anyhow::anyhow!("File can't be saved")),

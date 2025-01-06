@@ -36,6 +36,7 @@
 	let acceptedFiles = $state<string[]>([]);
 	let errors = $state<ImageError[]>([]);
 	let animationTime = $derived(images.length > 10 ? 50 : 100);
+	let action = $state('WebP');
 
 	onMount(() => {
 		const setupDragDrop = async () => {
@@ -110,6 +111,7 @@
 			image.status = Status.TODO;
 		});
 		let parameters: Parameters = {
+			action: action,
 			isLossless: compression === 'lossless',
 			quality: quality,
 			resize: resize,
@@ -296,7 +298,10 @@
 
 <main class="flex">
 	{#if !showAbout && !dropInProgress}
-		<section class="flex-grow min-w-96 h-screen flex flex-col">
+		<section
+			class="flex-grow min-w-96 h-screen flex flex-col"
+			in:fade={{ duration: 50, easing: elasticInOut }}
+		>
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<div
 				class="flex-grow w-auto h-auto px-2 flex flex-col overflow-y-auto my-2"
@@ -464,62 +469,116 @@
 			</div>
 		</section>
 		<section class="min-w-60 w-60 h-screen flex flex-col">
-			<div class="h-auto flex-grow px-2 overflow-y-auto">
+			<div class="h-auto flex-grow px-2 overflow-y-auto overscroll-x-none">
 				<div class="border-b-2 border-gray-800 pb-3">
-					<div class="py-2">Image compression</div>
+					<div class="py-2">Convert to</div>
+					<!-- <select class="select select-primary w-full">
+						<option selected>WebP</option>
+						<option>JPEG</option>
+						<option>PNG</option>
+					</select> -->
 					<div class="">
 						<div class="form-control">
-							<label class="label cursor-pointer justify-start">
+							<label class="label cursor-pointer justify-start py-1">
 								<input
 									type="radio"
-									name="compression"
+									name="action"
 									class="radio radio-primary"
-									value="lossless"
-									bind:group={compression}
+									value="WebP"
+									bind:group={action}
 								/>
-								<span class="ms-2">Lossless</span>
+								<span class="ms-2">WebP</span>
 							</label>
 						</div>
 						<div class="form-control">
-							<label class="label cursor-pointer justify-start">
+							<label class="label cursor-pointer justify-start py-1">
 								<input
 									type="radio"
-									name="compression"
+									name="action"
 									class="radio radio-primary"
-									value="lossy"
-									bind:group={compression}
+									value="JPEG"
+									bind:group={action}
 								/>
-								<span class="ms-2">Lossy</span>
+								<span class="ms-2">JPEG</span>
+							</label>
+						</div>
+						<div class="form-control">
+							<label class="label cursor-pointer justify-start py-1">
+								<input
+									type="radio"
+									name="action"
+									class="radio radio-primary"
+									value="PNG"
+									bind:group={action}
+								/>
+								<span class="ms-2">PNG</span>
 							</label>
 						</div>
 					</div>
-					<label class="flex items-center gap-2">
-						Quality
-						<input
-							type="number"
-							class="input input-bordered input-primary input-sm w-16"
-							placeholder="80"
-							bind:value={quality}
-							disabled={compression !== 'lossy'}
-						/>
-					</label>
-					<div class="flex items-center space-x-2 pt-2">
-						<input
-							type="range"
-							min="0"
-							max="100"
-							class="range range-primary disabled-range"
-							bind:value={quality}
-							disabled={compression !== 'lossy'}
-							class:disabled-range={compression !== 'lossy'}
-						/>
-					</div>
 				</div>
+				{#if action !== 'PNG'}
+					<div
+						class="border-b-2 border-gray-800 pb-3"
+						in:fade={{ duration: 50, easing: elasticInOut }}
+					>
+						<div class="py-2">Image compression</div>
+						{#if action === 'WebP'}
+							<div class="" in:fade={{ duration: 50, easing: elasticInOut }}>
+								<div class="form-control">
+									<label class="label cursor-pointer justify-start py-1">
+										<input
+											type="radio"
+											name="compression"
+											class="radio radio-primary"
+											value="lossless"
+											bind:group={compression}
+										/>
+										<span class="ms-2">Lossless</span>
+									</label>
+								</div>
+								<div class="form-control">
+									<label class="label cursor-pointer justify-start py-1">
+										<input
+											type="radio"
+											name="compression"
+											class="radio radio-primary"
+											value="lossy"
+											bind:group={compression}
+										/>
+										<span class="ms-2">Lossy</span>
+									</label>
+								</div>
+							</div>
+						{/if}
+
+						<label class="flex items-center gap-2">
+							Quality
+							<input
+								type="number"
+								class="input input-bordered input-primary input-sm w-16"
+								placeholder="80"
+								bind:value={quality}
+								disabled={compression !== 'lossy'}
+							/>
+						</label>
+						<div class="flex items-center space-x-2 pt-2">
+							<input
+								type="range"
+								min="0"
+								max="100"
+								class="range range-primary disabled-range"
+								bind:value={quality}
+								disabled={compression !== 'lossy'}
+								class:disabled-range={compression !== 'lossy'}
+							/>
+						</div>
+					</div>
+				{/if}
 				<div class="border-b-2 border-gray-800 pb-3">
 					<div class="py-2">Image resize</div>
 					<div class="">
 						<div class="form-control">
-							<label class="label cursor-pointer justify-start">
+							<label class="label cursor-pointer justify-start py-1">
 								<input
 									type="radio"
 									name="resize"
@@ -531,7 +590,7 @@
 							</label>
 						</div>
 						<div class="form-control">
-							<label class="label cursor-pointer justify-start">
+							<label class="label cursor-pointer justify-start py-1">
 								<input
 									type="radio"
 									name="resize"
@@ -543,7 +602,7 @@
 							</label>
 						</div>
 						<div class="form-control">
-							<label class="label cursor-pointer justify-start">
+							<label class="label cursor-pointer justify-start py-1">
 								<input
 									type="radio"
 									name="resize"
@@ -567,7 +626,7 @@
 						<span>px</span>
 					</label>
 					<div class="form-control">
-						<label class="label cursor-pointer justify-start">
+						<label class="label cursor-pointer justify-start py-1">
 							<input
 								type="checkbox"
 								class="checkbox checkbox-primary"
@@ -578,11 +637,11 @@
 						</label>
 					</div>
 				</div>
-				<div class="border-b-2 border-gray-800 pb-3">
+				<div class="pb-3">
 					<div class="py-2">Saves images to...</div>
 					<div class="">
 						<div class="form-control">
-							<label class="label cursor-pointer justify-start">
+							<label class="label cursor-pointer justify-start py-1">
 								<input
 									type="radio"
 									name="saveTo"
@@ -594,7 +653,7 @@
 							</label>
 						</div>
 						<div class="form-control">
-							<label class="label cursor-pointer justify-start">
+							<label class="label cursor-pointer justify-start py-1">
 								<input
 									type="radio"
 									name="saveTo"
@@ -607,7 +666,7 @@
 						</div>
 					</div>
 
-					<div class="flex flex-row gap-1 items-center">
+					<div class="flex flex-row gap-1 items-center pt-1 w-full">
 						<!-- svelte-ignore a11y_consider_explicit_label -->
 						<button
 							class="btn btn-primary btn-sm"
@@ -629,7 +688,7 @@
 						>
 						<input
 							type="text"
-							class="input input-bordered input-primary input-sm w-44"
+							class="input input-bordered input-primary input-sm w-full"
 							disabled={saveTo === 'same-folder'}
 							bind:value={saveFolder}
 						/>

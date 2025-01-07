@@ -246,7 +246,7 @@
 	async function toggleAbout() {
 		showAbout = !showAbout;
 		if (version === '') {
-			version = '0.3.0'; //await getVersion();
+			version = await getVersion();
 		}
 	}
 
@@ -759,15 +759,14 @@
 						class="text-primary hover:text-secondary">GitHub</a
 					>.
 				</div>
+				<div class="mt-auto italic text-slate-500">*If you know, you know...</div>
 			</div>
-			<div class="flex justify-between py-2">
-				<div class="w-48"></div>
+			<div class="flex justify-center py-2">
 				<button
 					class="btn btn-primary btn-sm mx-2 w-24"
 					onclick={toggleAbout}
 					in:fade={{ duration: 50, easing: elasticInOut }}>Close</button
 				>
-				<div class="w-48 text-end truncate mx-2 mt-3">*If you know, you know...</div>
 			</div>
 		</section>
 	{/if}

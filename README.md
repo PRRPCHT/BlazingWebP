@@ -2,7 +2,7 @@
 
 ![BlazingWebP logo](/static/Icon_300.png 'BlazingWebP')
 
-Your _blazingly fast_\* batch WebP converter for MacOS, Windows and Linux (with a desktop environment).
+Your _blazingly fast_\* batch WebP (and JPEG and PNG) converter for MacOS, Windows and Linux (with a desktop environment).
 
 \* _If you know, you know_ ;)
 
@@ -10,14 +10,14 @@ Your _blazingly fast_\* batch WebP converter for MacOS, Windows and Linux (with 
 
 ![BlazingWebP](/static/BlazingWebP.png 'BlazingWebP')
 
-BlazingWebP is a no nonsense, straight to the point bacth WebP converter. Convert your images to WebP with a lossless or lossy algorithm, resize your photos at the same time, and publish them fast on the interwebs!
+BlazingWebP is a no nonsense, straight to the point batch image converter. Convert your images to WebP (with a lossless or lossy algorithm), JPEG or PNG, resize your photos at the same time, and publish them fast on the interwebs!
 
 _Photos provided by [Pierre Pichot](https://pierrepichot.com)._
 
 ## Roadmap
 
 - ~~Drag and drop files to the app~~ - DONE in 0.2.0
-- WebP to JPEG/PNG conversion
+- ~~WebP to JPEG/PNG conversion~~ - DONE in 0.3.0
 
 ## Limitations
 

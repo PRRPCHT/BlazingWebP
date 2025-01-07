@@ -246,7 +246,7 @@
 	async function toggleAbout() {
 		showAbout = !showAbout;
 		if (version === '') {
-			version = await getVersion();
+			version = '0.3.0'; //await getVersion();
 		}
 	}
 

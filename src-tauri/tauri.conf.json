@@ -30,7 +30,8 @@
     "targets": "all",
     "icon": [
       "icons/Icon_1024.png",
-      "icons/icon_1024.icns"
+      "icons/icon_1024.icns",
+      "icons/icon_1024.ico"
     ]
   }
 }

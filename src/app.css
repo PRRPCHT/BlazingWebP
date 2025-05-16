@@ -1,5 +1,48 @@
 @import 'tailwindcss';
 @plugin "daisyui";
+@plugin "daisyui/theme" {
+	name: 'mytheme';
+	default: true; /* set as default */
+	prefersdark: true; /* set as default dark mode (prefers-color-scheme:dark) */
+	color-scheme: dark; /* color of browser-provided UI */
+
+	--color-base-100: '#1d232a';
+	--color-base-200: '#181d23';
+	--color-base-300: '#13171c';
+	--color-base-content: '#ccced0';
+	--color-primary: '#4e8da9';
+	--color-primary-content: '#100b03';
+	--color-secondary: '#D6AA58';
+	--color-secondary-content: '#100b03';
+	--color-accent: '#A9CDD4';
+	--color-accent-content: '#0a0f10';
+	--color-neutral: '#374151';
+	--color-neutral-content: '#9ca3af';
+	--color-info: '#7dd3fc';
+	--color-info-content: '#051016';
+	--color-success: '#4ade80';
+	--color-success-content: '#021206';
+	--color-warning: '#fde047';
+	--color-warning-content: '#161202';
+	--color-error: '#F26457';
+	--color-error-content: '#140303';
+
+	/* border radius */
+	--radius-selector: 1rem;
+	--radius-field: 0.25rem;
+	--radius-box: 0.5rem;
+
+	/* base sizes */
+	--size-selector: 0.25rem;
+	--size-field: 0.25rem;
+
+	/* border size */
+	--border: 1px;
+
+	/* effects */
+	--depth: 1;
+	--noise: 0;
+}
 
 @layer base {
 	body {

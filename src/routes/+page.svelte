@@ -483,7 +483,7 @@
 								<input
 									type="radio"
 									name="action"
-									class="radio radio-primary"
+									class="radio radio-primary radio-sm"
 									value="WebP"
 									bind:group={action}
 								/>
@@ -495,7 +495,7 @@
 								<input
 									type="radio"
 									name="action"
-									class="radio radio-primary"
+									class="radio radio-primary radio-sm"
 									value="JPEG"
 									bind:group={action}
 								/>
@@ -507,7 +507,7 @@
 								<input
 									type="radio"
 									name="action"
-									class="radio radio-primary"
+									class="radio radio-primary radio-sm"
 									value="PNG"
 									bind:group={action}
 								/>
@@ -529,7 +529,7 @@
 										<input
 											type="radio"
 											name="compression"
-											class="radio radio-primary"
+											class="radio radio-primary radio-sm"
 											value="lossless"
 											bind:group={compression}
 										/>
@@ -541,7 +541,7 @@
 										<input
 											type="radio"
 											name="compression"
-											class="radio radio-primary"
+											class="radio radio-primary radio-sm"
 											value="lossy"
 											bind:group={compression}
 										/>
@@ -582,7 +582,7 @@
 								<input
 									type="radio"
 									name="resize"
-									class="radio radio-primary"
+									class="radio radio-primary radio-sm"
 									value="NoResizing"
 									bind:group={resize}
 								/>
@@ -594,7 +594,7 @@
 								<input
 									type="radio"
 									name="resize"
-									class="radio radio-primary"
+									class="radio radio-primary radio-sm"
 									value="LongerSide"
 									bind:group={resize}
 								/>
@@ -606,7 +606,7 @@
 								<input
 									type="radio"
 									name="resize"
-									class="radio radio-primary"
+									class="radio radio-primary radio-sm"
 									value="ShorterSide"
 									bind:group={resize}
 								/>
@@ -645,7 +645,7 @@
 								<input
 									type="radio"
 									name="saveTo"
-									class="radio radio-primary"
+									class="radio radio-primary radio-sm"
 									value="same-folder"
 									bind:group={saveTo}
 								/>
@@ -657,7 +657,7 @@
 								<input
 									type="radio"
 									name="saveTo"
-									class="radio radio-primary"
+									class="radio radio-primary radio-sm"
 									value="choose-folder"
 									bind:group={saveTo}
 								/>

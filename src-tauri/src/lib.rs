@@ -1,6 +1,8 @@
 use fast_image_resize::{images::Image as FirImage, PixelType, Resizer};
 use image::codecs::jpeg::JpegEncoder;
-use image::{DynamicImage, GenericImageView, ImageBuffer, ImageEncoder, ImageReader, Rgba};
+use image::{
+    DynamicImage, GenericImageView, ImageBuffer, ImageEncoder, ImageFormat, ImageReader, Rgba,
+};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use std::io::Cursor;
 use std::{path::Path, sync::Mutex, thread};
@@ -58,6 +60,10 @@ enum ConvertTo {
     WebP,
     JPEG,
     PNG,
+    BMP,
+    TIFF,
+    AVIF,
+    GIF,
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -200,11 +206,31 @@ fn convert_to_jpeg(image: &DynamicImage, parameters: &Parameters) -> anyhow::Res
 }
 
 fn convert_to_png(image: &DynamicImage) -> anyhow::Result<Vec<u8>> {
+    convert_to_format(image, image::ImageFormat::Png)
+}
+
+fn convert_to_bmp(image: &DynamicImage) -> anyhow::Result<Vec<u8>> {
+    convert_to_format(image, image::ImageFormat::Bmp)
+}
+
+fn convert_to_tiff(image: &DynamicImage) -> anyhow::Result<Vec<u8>> {
+    convert_to_format(image, image::ImageFormat::Tiff)
+}
+
+fn convert_to_avif(image: &DynamicImage) -> anyhow::Result<Vec<u8>> {
+    convert_to_format(image, image::ImageFormat::Avif)
+}
+
+fn convert_to_gif(image: &DynamicImage) -> anyhow::Result<Vec<u8>> {
+    convert_to_format(image, image::ImageFormat::Gif)
+}
+
+fn convert_to_format(image: &DynamicImage, format: ImageFormat) -> anyhow::Result<Vec<u8>> {
     let mut encoded = Vec::new();
     {
         // Wrap `encoded` in a Cursor to provide Seek functionality
         let mut cursor = Cursor::new(&mut encoded);
-        image.write_to(&mut cursor, image::ImageFormat::Png)?;
+        image.write_to(&mut cursor, format)?;
     }
     Ok(encoded)
 }
@@ -225,6 +251,10 @@ fn process_image(
         ConvertTo::WebP => convert_to_webp(&sized_image, parameters)?,
         ConvertTo::JPEG => convert_to_jpeg(&sized_image, parameters)?,
         ConvertTo::PNG => convert_to_png(&sized_image)?,
+        ConvertTo::BMP => convert_to_bmp(&sized_image)?,
+        ConvertTo::TIFF => convert_to_tiff(&sized_image)?,
+        ConvertTo::AVIF => convert_to_avif(&sized_image)?,
+        ConvertTo::GIF => convert_to_gif(&sized_image)?,
     };
     let directory_path = if parameters.save_folder != "" {
         parameters.save_folder.as_str()
@@ -235,6 +265,10 @@ fn process_image(
         ConvertTo::WebP => "webp",
         ConvertTo::JPEG => "jpg",
         ConvertTo::PNG => "png",
+        ConvertTo::BMP => "bmp",
+        ConvertTo::TIFF => "tiff",
+        ConvertTo::AVIF => "avif",
+        ConvertTo::GIF => "gif",
     };
     if !is_cancel(app) {
         let output_path = Path::new(directory_path)

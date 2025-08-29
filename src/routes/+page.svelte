@@ -32,11 +32,13 @@
 	let showAbout = $state(false);
 	let version = $state('');
 	let dropInProgress = $state(false);
-	let acceptedExtensions = ['png', 'jpeg', 'jpg', 'webp'];
+	let acceptedExtensions = ['png', 'jpeg', 'jpg', 'webp', 'bmp', 'tiff', 'avif', 'gif'];
 	let acceptedFiles = $state<string[]>([]);
 	let errors = $state<ImageError[]>([]);
 	let animationTime = $derived(images.length > 10 ? 50 : 100);
 	let action = $state('WebP');
+
+	let formats = $state<string[]>(['WebP', 'JPEG', 'PNG', 'BMP', 'TIFF', 'AVIF', 'GIF']);
 
 	onMount(() => {
 		const setupDragDrop = async () => {
@@ -311,7 +313,7 @@
 					<div class="text-center text-slate-500">
 						<div class="text-2xl mb-6">Drop your images here!</div>
 						<div class="text-2xl mb-6">Or use the Add Images button below.</div>
-						<div class="">Accepted formats: PNG, JPEG, WEBP.</div>
+						<div class="">Accepted formats: {acceptedExtensions.join(', ').toUpperCase()}.</div>
 					</div>
 				{/if}
 				{#each images as image, i}
@@ -472,51 +474,24 @@
 			<div class="h-auto flex-grow px-2 overflow-y-auto overscroll-x-none">
 				<div class="border-b-2 border-gray-800 pb-3">
 					<div class="py-2">Convert to</div>
-					<!-- <select class="select select-primary w-full">
-						<option selected>WebP</option>
-						<option>JPEG</option>
-						<option>PNG</option>
-					</select> -->
-					<div class="">
-						<div class="form-control">
-							<label class="label cursor-pointer justify-start py-1">
-								<input
-									type="radio"
-									name="action"
-									class="radio radio-primary radio-sm"
-									value="WebP"
-									bind:group={action}
-								/>
-								<span class="ms-2">WebP</span>
-							</label>
-						</div>
-						<div class="form-control">
-							<label class="label cursor-pointer justify-start py-1">
-								<input
-									type="radio"
-									name="action"
-									class="radio radio-primary radio-sm"
-									value="JPEG"
-									bind:group={action}
-								/>
-								<span class="ms-2">JPEG</span>
-							</label>
-						</div>
-						<div class="form-control">
-							<label class="label cursor-pointer justify-start py-1">
-								<input
-									type="radio"
-									name="action"
-									class="radio radio-primary radio-sm"
-									value="PNG"
-									bind:group={action}
-								/>
-								<span class="ms-2">PNG</span>
-							</label>
-						</div>
+					<div class="grid grid-cols-2 gap-2">
+						{#each formats as format}
+							<div class="form-control">
+								<label class="label cursor-pointer justify-start py-1">
+									<input
+										type="radio"
+										name="action"
+										class="radio radio-primary radio-sm"
+										value={format}
+										bind:group={action}
+									/>
+									<span class="ms-2">{format}</span>
+								</label>
+							</div>
+						{/each}
 					</div>
 				</div>
-				{#if action !== 'PNG'}
+				{#if action === 'WebP' || action === 'JPEG'}
 					<div
 						class="border-b-2 border-gray-800 pb-3"
 						in:fade={{ duration: 50, easing: elasticInOut }}

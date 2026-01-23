@@ -248,7 +248,7 @@
 	async function toggleAbout() {
 		showAbout = !showAbout;
 		if (version === '') {
-			version = await getVersion();
+			version = 'v0.4.1'; //await getVersion();
 		}
 	}
 
@@ -313,13 +313,19 @@
 					<div class="text-center text-slate-500">
 						<div class="text-2xl mb-6">Drop your images here!</div>
 						<div class="text-2xl mb-6">Or use the Add Images button below.</div>
-						<div class="">Accepted formats: {acceptedExtensions.join(', ').toUpperCase()}.</div>
+						<div class="">
+							Accepted formats: {acceptedExtensions.join(', ').toUpperCase()}.
+						</div>
 					</div>
 				{/if}
 				{#each images as image, i}
 					<div
 						class="flex justify-between border-b-2 border-gray-800 py-3 first:pt-0"
-						in:fade={{ duration: animationTime, delay: animationTime * i, easing: elasticInOut }}
+						in:fade={{
+							duration: animationTime,
+							delay: animationTime * i,
+							easing: elasticInOut
+						}}
 					>
 						<div class="flex flex-row justify-start">
 							<div
@@ -424,7 +430,8 @@
 									class:text-primary={image.status == Status.TODO}
 									class:text-error={image.status == Status.ERROR}
 								>
-									{image.status}{image.status == Status.ERROR && image.errorMessage !== ''
+									{image.status}{image.status == Status.ERROR &&
+									image.errorMessage !== ''
 										? ' : ' + image.errorMessage
 										: ''}
 								</div>
@@ -725,7 +732,8 @@
 					<img src="/beer.svg" class="h-12" alt="Beer!" />
 				</div> -->
 				<div class="mb-2">
-					This software is distributed "as is" with no guarantee according to the GPLv2 licence.
+					This software is distributed "as is" with no guarantee according to the GPLv2
+					licence.
 				</div>
 				<div class="mb-2">
 					Follow the team behind BlazingWebP on <a

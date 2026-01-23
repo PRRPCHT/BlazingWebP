@@ -1,6 +1,6 @@
 [package]
 name = "BlazingWebP"
-version = "0.4.0"
+version = "0.4.1"
 description = "Your blazingly fast image batch converter."
 authors = ["Pierre Pichot"]
 edition = "2021"

@@ -38,6 +38,7 @@
 	let animationTime = $derived(images.length > 10 ? 50 : 100);
 	let action = $state('WebP');
 
+
 	let formats = $state<string[]>(['WebP', 'JPEG', 'PNG', 'BMP', 'TIFF', 'AVIF', 'GIF']);
 
 	onMount(() => {
@@ -161,11 +162,11 @@
 	}
 
 	async function addFiles(files: string[]) {
-		files.forEach(async (file) => {
-			let { filepath, filename, extension } = await extractFileDetails(file);
+		for (const file of files) {
+			const { filepath, filename, extension } = await extractFileDetails(file);
 			if (acceptedExtensions.includes(extension.toLowerCase())) {
 				if (!acceptedFiles.includes(file)) {
-					let newImage: Image = {
+					const newImage: Image = {
 						fullPath: file,
 						filename: filename,
 						extension: extension,
@@ -179,29 +180,27 @@
 					images.push(newImage);
 					acceptedFiles.push(file);
 				} else {
-					let error: ImageError = {
+					errors.push({
 						type: ImageErrorType.ALREADY_EXISTS,
 						file: file
-					};
-					errors.push(error);
+					});
 				}
 			} else {
-				let error: ImageError = {
+				errors.push({
 					type: ImageErrorType.WRONG_FORMAT,
 					file: file
-				};
-				errors.push(error);
+				});
 			}
-		});
-		//if (rejectedFiles.length > 0) {
+		}
 		setTimeout(() => {
 			errors = [];
 		}, 3000);
-		//}
 	}
 
 	function clear() {
 		images = [];
+		acceptedFiles = [];
+		done = 0;
 	}
 
 	function clearListProgress() {
@@ -248,16 +247,16 @@
 	async function toggleAbout() {
 		showAbout = !showAbout;
 		if (version === '') {
-			version = 'v0.4.1'; //await getVersion();
+			version = await getVersion();
 		}
 	}
 
-	listen<string>('progress', (event) => {
+	listen<string>('progress', (event: any) => {
 		console.log(`Progress started for ${event.payload}`);
 		updateListProgress(event.payload);
 	});
 
-	listen<Success>('success', (event) => {
+	listen<Success>('success', (event: any) => {
 		console.log(`Succes for ${event.payload.fullPath} with size ${event.payload.size}`);
 		updateListSuccess(event.payload);
 		checkProgress();
@@ -276,24 +275,14 @@
 		}
 	}
 
-	function dropFile(ev: DragEvent) {
-		ev.preventDefault();
-		if (ev.dataTransfer != null) {
-			const files = ev.dataTransfer.files;
-		}
-	}
-
 	function prettyError(error: ImageError): string {
 		switch (error.type) {
 			case ImageErrorType.ALREADY_EXISTS:
 				return 'Image already in the list: ' + error.file;
-				break;
 			case ImageErrorType.WRONG_FORMAT:
 				return 'Wrong format for file: ' + error.file;
-				break;
 			default:
 				return 'Error with file: ' + error.file;
-				break;
 		}
 	}
 </script>
@@ -762,7 +751,7 @@
 				class="flex-grow w-auto h-auto px-2 flex flex-col my-2 container mx-auto text-center justify-center"
 			>
 				<div class="text-2xl mb-6">Drop your images here!</div>
-				<div class="mb-2">Accepted formats: PNG, JPEG, WEBP.</div>
+				<div class="mb-2">Accepted formats: {acceptedExtensions.join(', ').toUpperCase()}.</div>
 			</div>
 		</section>
 	{/if}

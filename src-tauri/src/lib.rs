@@ -28,26 +28,6 @@ struct Image {
     processed: bool,
 }
 
-impl Image {
-    pub fn new(
-        full_path: String,
-        filename: String,
-        extension: String,
-        path: String,
-        original_size: u32,
-    ) -> Image {
-        Image {
-            full_path,
-            filename,
-            extension,
-            path,
-            original_size,
-            webp_size: 0,
-            processed: false,
-        }
-    }
-}
-
 #[derive(Copy, Clone, Debug, serde::Deserialize)]
 enum Resize {
     NoResizing,
@@ -56,6 +36,7 @@ enum Resize {
 }
 
 #[derive(Copy, Clone, Debug, serde::Deserialize)]
+#[allow(clippy::upper_case_acronyms)]
 enum ConvertTo {
     WebP,
     JPEG,
@@ -111,15 +92,9 @@ pub fn resize_dynamic_image(
     let mut resizer = Resizer::new();
     resizer.resize(&src_image, &mut dst_image, None)?;
 
-    // Convert the resized image back into an ImageBuffer
-    let resized_buffer: ImageBuffer<Rgba<u8>, Vec<u8>> = match ImageBuffer::from_raw(
-        new_width as u32,
-        new_height as u32,
-        dst_image.buffer().to_vec(),
-    ) {
-        Some(buffer) => buffer,
-        None => panic!("Failed to create ImageBuffer from resized data"),
-    };
+    let resized_buffer: ImageBuffer<Rgba<u8>, Vec<u8>> =
+        ImageBuffer::from_raw(new_width, new_height, dst_image.buffer().to_vec())
+            .ok_or_else(|| anyhow::anyhow!("Failed to create ImageBuffer from resized data"))?;
 
     // Convert the ImageBuffer into a DynamicImage and return it
     Ok(DynamicImage::ImageRgba8(resized_buffer))
@@ -256,7 +231,7 @@ fn process_image(
         ConvertTo::AVIF => convert_to_avif(&sized_image)?,
         ConvertTo::GIF => convert_to_gif(&sized_image)?,
     };
-    let directory_path = if parameters.save_folder != "" {
+    let directory_path = if !parameters.save_folder.is_empty() {
         parameters.save_folder.as_str()
     } else {
         image.path.as_str()
@@ -293,7 +268,7 @@ fn get_file_size(path: &std::path::PathBuf) -> u64 {
 
 fn is_cancel(app: &tauri::AppHandle) -> bool {
     let state = app.state::<Mutex<AppState>>();
-    let state = state.lock().unwrap();
+    let state = state.lock().unwrap_or_else(|e| e.into_inner());
     state.cancel
 }
 
@@ -303,7 +278,7 @@ fn process(app: tauri::AppHandle, images: Vec<Image>, parameters: Parameters) {
         images.par_iter().for_each(|image| {
             let is_cancel = is_cancel(&app);
             if !is_cancel {
-                app.emit("progress", image.full_path.clone()).unwrap();
+                app.emit("progress", image.full_path.clone()).ok();
                 match process_image(&app, image, &parameters) {
                     Ok(file_size) => {
                         if file_size > 0 {
@@ -314,18 +289,19 @@ fn process(app: tauri::AppHandle, images: Vec<Image>, parameters: Parameters) {
                                     size: file_size,
                                 },
                             )
-                            .unwrap()
+                            .ok();
                         }
                     }
-                    Err(error) => app
-                        .emit(
+                    Err(error) => {
+                        app.emit(
                             "error",
                             ProcessError {
                                 full_path: image.full_path.clone(),
                                 error: error.to_string(),
                             },
                         )
-                        .unwrap(),
+                        .ok();
+                    }
                 };
             }
         });
@@ -335,7 +311,7 @@ fn process(app: tauri::AppHandle, images: Vec<Image>, parameters: Parameters) {
 
 fn set_status(app: tauri::AppHandle, is_cancel: bool) {
     let state = app.state::<Mutex<AppState>>();
-    let mut state = state.lock().unwrap();
+    let mut state = state.lock().unwrap_or_else(|e| e.into_inner());
     state.cancel = is_cancel;
 }
 

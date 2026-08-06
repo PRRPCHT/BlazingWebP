@@ -111,6 +111,13 @@ fn resize_if_needed(
         Resize::LongerSide => {
             let current_width = src_image.width();
             let current_height = src_image.height();
+            if current_width == 0 || current_height == 0 {
+                return Err(anyhow::anyhow!(
+                    "Cannot resize image with a zero dimension (width={}, height={})",
+                    current_width,
+                    current_height
+                ));
+            }
             if !is_enlarging_allowed && current_width < resize_to && current_height < resize_to {
                 Ok(src_image)
             } else {
@@ -131,6 +138,13 @@ fn resize_if_needed(
         Resize::ShorterSide => {
             let current_width = src_image.width();
             let current_height = src_image.height();
+            if current_width == 0 || current_height == 0 {
+                return Err(anyhow::anyhow!(
+                    "Cannot resize image with a zero dimension (width={}, height={})",
+                    current_width,
+                    current_height
+                ));
+            }
             if !is_enlarging_allowed && current_width < resize_to && current_height < resize_to {
                 Ok(src_image)
             } else {

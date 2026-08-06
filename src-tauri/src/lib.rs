@@ -246,8 +246,9 @@ fn process_image(
         ConvertTo::GIF => "gif",
     };
     if !is_cancel(app) {
+        let sanitized_filename = sanitize_filename(&image.filename);
         let output_path = Path::new(directory_path)
-            .join(image.filename.as_str())
+            .join(&sanitized_filename)
             .with_extension(extension);
         let file_size = match std::fs::write(&output_path, &*encoded) {
             Ok(_) => get_file_size(&output_path),
@@ -263,6 +264,20 @@ fn get_file_size(path: &std::path::PathBuf) -> u64 {
     match std::fs::metadata(path) {
         Ok(metadata) => metadata.len() / 1024,
         Err(_) => 0,
+    }
+}
+
+/// Strip any directory components or traversal segments from a user-supplied
+/// filename so it cannot escape the target output directory.
+fn sanitize_filename(filename: &str) -> String {
+    let clean = Path::new(filename)
+        .file_name()
+        .map(|s| s.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    if clean.is_empty() || clean == "." || clean == ".." {
+        "image".to_string()
+    } else {
+        clean
     }
 }
 

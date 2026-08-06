@@ -42,6 +42,8 @@
 	let formats = $state<string[]>(['WebP', 'JPEG', 'PNG', 'BMP', 'TIFF', 'AVIF', 'GIF']);
 
 	onMount(() => {
+		const unlistens: Array<(() => void) | undefined> = [];
+
 		const setupDragDrop = async () => {
 			const unlisten = await getCurrentWebview().onDragDropEvent((event) => {
 				if (!showAbout && !inProgress) {
@@ -60,23 +62,41 @@
 					}
 				}
 			});
-
-			return unlisten;
+			unlistens.push(unlisten);
 		};
 
-		let unlisten: (() => void) | undefined;
-
-		setupDragDrop()
-			.then((fn) => {
-				unlisten = fn;
-			})
-			.catch((error) => {
-				console.error('Error setting up drag-and-drop:', error);
+		const setupEvents = async () => {
+			const unlistenProgress = await listen<string>('progress', (event: any) => {
+				console.log(`Progress started for ${event.payload}`);
+				updateListProgress(event.payload);
 			});
+			unlistens.push(unlistenProgress);
+
+			const unlistenSuccess = await listen<Success>('success', (event: any) => {
+				console.log(`Succes for ${event.payload.fullPath} with size ${event.payload.size}`);
+				updateListSuccess(event.payload);
+				checkProgress();
+			});
+			unlistens.push(unlistenSuccess);
+
+			const unlistenError = await listen<ProcessError>('error', (event) => {
+				console.log(`Error for ${event.payload.fullPath} with ${event.payload.error}`);
+				updateListError(event.payload);
+				checkProgress();
+			});
+			unlistens.push(unlistenError);
+		};
+
+		setupDragDrop().catch((error) => {
+			console.error('Error setting up drag-and-drop:', error);
+		});
+		setupEvents().catch((error) => {
+			console.error('Error setting up event listeners:', error);
+		});
 
 		return () => {
-			if (unlisten) {
-				unlisten();
+			for (const unlisten of unlistens) {
+				unlisten?.();
 			}
 		};
 	});
@@ -250,23 +270,6 @@
 			version = await getVersion();
 		}
 	}
-
-	listen<string>('progress', (event: any) => {
-		console.log(`Progress started for ${event.payload}`);
-		updateListProgress(event.payload);
-	});
-
-	listen<Success>('success', (event: any) => {
-		console.log(`Succes for ${event.payload.fullPath} with size ${event.payload.size}`);
-		updateListSuccess(event.payload);
-		checkProgress();
-	});
-
-	listen<ProcessError>('error', (event) => {
-		console.log(`Error for ${event.payload.fullPath} with ${event.payload.error}`);
-		updateListError(event.payload);
-		checkProgress();
-	});
 
 	export function dragover(ev: DragEvent) {
 		ev.preventDefault();

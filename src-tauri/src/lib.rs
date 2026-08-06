@@ -4,6 +4,7 @@ use image::{
     DynamicImage, GenericImageView, ImageBuffer, ImageEncoder, ImageFormat, ImageReader, Rgba,
 };
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use anyhow::Context;
 use std::io::Cursor;
 use std::{path::Path, sync::Mutex, thread};
 use tauri::{Emitter, Manager};
@@ -265,7 +266,7 @@ fn process_image(
             .join(&sanitized_filename)
             .with_extension(extension);
         let file_size = match std::fs::write(&output_path, &*encoded) {
-            Ok(_) => get_file_size(&output_path),
+            Ok(_) => get_file_size(&output_path)?,
             Err(_) => return Err(anyhow::anyhow!("File can't be saved")),
         };
         Ok(file_size)
@@ -274,11 +275,9 @@ fn process_image(
     }
 }
 
-fn get_file_size(path: &std::path::PathBuf) -> u64 {
-    match std::fs::metadata(path) {
-        Ok(metadata) => metadata.len() / 1024,
-        Err(_) => 0,
-    }
+fn get_file_size(path: &std::path::PathBuf) -> anyhow::Result<u64> {
+    let metadata = std::fs::metadata(path).context("Failed to read file metadata after write")?;
+    Ok(metadata.len() / 1024)
 }
 
 /// Strip any directory components or traversal segments from a user-supplied

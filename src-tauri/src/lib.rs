@@ -118,12 +118,12 @@ fn resize_if_needed(
                 let new_width = if is_width_longer {
                     resize_to
                 } else {
-                    current_width * resize_to / current_height
+                    ((current_width as u64) * (resize_to as u64) / (current_height as u64)) as u32
                 };
                 let new_height = if !is_width_longer {
                     resize_to
                 } else {
-                    current_height * resize_to / current_width
+                    ((current_height as u64) * (resize_to as u64) / (current_width as u64)) as u32
                 };
                 resize_dynamic_image(src_image, new_width, new_height)
             }
@@ -136,12 +136,12 @@ fn resize_if_needed(
             } else {
                 let is_width_longer = current_width > current_height;
                 let new_width = if is_width_longer {
-                    current_width * resize_to / current_height
+                    ((current_width as u64) * (resize_to as u64) / (current_height as u64)) as u32
                 } else {
                     resize_to
                 };
                 let new_height = if !is_width_longer {
-                    current_height * resize_to / current_width
+                    ((current_height as u64) * (resize_to as u64) / (current_width as u64)) as u32
                 } else {
                     resize_to
                 };
